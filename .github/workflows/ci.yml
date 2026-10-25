@@ -105,5 +105,5 @@ jobs:
           --min-tokens 50
           --min-lines 10
           --threshold 0
-          --ignore "**/node_modules/**,**/.git/**,**/report/**,**/jscpd-report/**"
+          --ignore "**/node_modules/**,**/.git/**,**/report/**,**/jscpd-report/**,**/.github/workflows/guards.yml"
           .

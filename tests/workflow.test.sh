@@ -26,6 +26,13 @@ else
 	bad AC-CI-06 'jscpd thresholds are not 50 tokens / 10 lines'
 fi
 
+# guards.yml is owned by main. jscpd must not force this PR to rewrite it.
+if grep -q 'guards.yml' "$wf" && grep -q -- '--ignore' "$wf"; then
+	ok AC-CI-06b
+else
+	bad AC-CI-06b 'jscpd must ignore the trusted guards.yml from main'
+fi
+
 for job in script-tests local-checks gitleaks jscpd line-budget rules-frontmatter; do
 	if grep -q "^  ${job}:" "$wf"; then
 		ok "AC-CI-07-${job}"
