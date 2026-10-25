@@ -86,4 +86,15 @@ else
 	ok AC-CI-14
 fi
 
+if awk '
+	$0 == "  script-tests:" { p = 1; next }
+	p && /^  [A-Za-z0-9_-]+:/ { p = 0 }
+	p && /pull_request\.head\.sha/ { found = 1 }
+	END { exit found ? 0 : 1 }
+' "$wf"; then
+	ok AC-CI-15
+else
+	bad AC-CI-15 'script-tests must check out pull_request.head.sha'
+fi
+
 finish

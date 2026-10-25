@@ -26,6 +26,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Run hook and check-script tests
         run: ./tests/run.sh
 

@@ -69,6 +69,16 @@ else
 fi
 
 # pre-push calls --range with no SHAs; the script must resolve origin/main itself.
+# CI's default pull_request checkout is GitHub's test merge; use the PR head.
+hk_event_head=
+if [ -n "${GITHUB_EVENT_PATH:-}" ] && [ -f "${GITHUB_EVENT_PATH}" ]; then
+	hk_event_head=$(python3 -c 'import json,sys
+p=json.load(open(sys.argv[1])).get("pull_request") or {}
+print((p.get("head") or {}).get("sha") or "")' "$GITHUB_EVENT_PATH" 2>/dev/null || true)
+fi
+if [ -n "$hk_event_head" ] && git cat-file -e "${hk_event_head}^{commit}" 2>/dev/null; then
+	git checkout -q --detach "$hk_event_head"
+fi
 set +e
 range_out=$(RELAY_SKIP_SCRIPT_TESTS=1 "$CHECKS/run-local.sh" --range 2>&1)
 range_code=$?

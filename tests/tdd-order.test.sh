@@ -160,7 +160,9 @@ else
 	bad AC-TD-12 "merge with own edits should fail: $_out"
 fi
 
-# Two-parent commit whose second parent is not on main: FAIL.
+# Two-parent commit whose second parent is not on main, with its own
+# production edit: FAIL. First parent is not on main, so this is not
+# an integration merge.
 tmp6=$(mktemp -d)
 trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6"' EXIT
 init_tdd "$tmp6"
@@ -181,14 +183,17 @@ git -C "$tmp6" add app/feat.sh
 git -C "$tmp6" commit -q -m feat
 p2_6=$(git -C "$tmp6" rev-parse HEAD)
 git -C "$tmp6" checkout -q side
-git -C "$tmp6" merge -q --no-ff --no-edit feat
+git -C "$tmp6" merge --no-commit --no-ff feat
+printf 'own\n' >"$tmp6/app/own.sh"
+git -C "$tmp6" add app/own.sh
+git -C "$tmp6" commit -q -m 'off-main merge with own prod'
 h6=$(git -C "$tmp6" rev-parse HEAD)
 # Only the merge is in p2..merge; p2 is not an ancestor of origin/main.
 range_tdd "$tmp6" "$p2_6" "$h6"
 if [ "$_rc" -eq 1 ]; then
 	ok AC-TD-13
 else
-	bad AC-TD-13 "off-main 2-parent merge should fail: $_out"
+	bad AC-TD-13 "off-main 2-parent merge with own prod should fail: $_out"
 fi
 
 # Octopus (3 parents): FAIL.
@@ -345,6 +350,90 @@ if [ "$_rc" -eq 1 ]; then
 	ok AC-TD-18
 else
 	bad AC-TD-18 "conflict-resolution prod must not pass because main added a test: $_out"
+fi
+
+# --no-ff merge of a good feature into origin/main: integration commit,
+# range must pass (second-parent commits are still checked).
+tmp12=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11" "$tmp12"' EXIT
+init_tdd "$tmp12"
+printf 'base\n' >"$tmp12/README.md"
+git -C "$tmp12" add README.md
+git -C "$tmp12" commit -q -m base
+main12=$(git -C "$tmp12" rev-parse HEAD)
+git -C "$tmp12" update-ref refs/remotes/origin/main "$main12"
+git -C "$tmp12" checkout -q -b feature
+mkdir -p "$tmp12/app" "$tmp12/tests"
+printf 'prod\n' >"$tmp12/app/feat.sh"
+printf 'test\n' >"$tmp12/tests/feat.test.sh"
+git -C "$tmp12" add app/feat.sh tests/feat.test.sh
+git -C "$tmp12" commit -q -m feat
+git -C "$tmp12" checkout -q main
+git -C "$tmp12" merge -q --no-ff --no-edit feature
+h12=$(git -C "$tmp12" rev-parse HEAD)
+range_tdd "$tmp12" "$main12" "$h12"
+if [ "$_rc" -eq 0 ]; then
+	ok AC-TD-19
+else
+	bad AC-TD-19 "no-ff merge into main with a good second parent should pass: $_out"
+fi
+
+# Same shape, but the second-parent side has a production-only commit: FAIL.
+tmp13=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11" "$tmp12" "$tmp13"' EXIT
+init_tdd "$tmp13"
+printf 'base\n' >"$tmp13/README.md"
+git -C "$tmp13" add README.md
+git -C "$tmp13" commit -q -m base
+main13=$(git -C "$tmp13" rev-parse HEAD)
+git -C "$tmp13" update-ref refs/remotes/origin/main "$main13"
+git -C "$tmp13" checkout -q -b feature
+mkdir -p "$tmp13/app"
+printf 'bad\n' >"$tmp13/app/bad.sh"
+git -C "$tmp13" add app/bad.sh
+git -C "$tmp13" commit -q -m 'prod only'
+git -C "$tmp13" checkout -q main
+git -C "$tmp13" merge -q --no-ff --no-edit feature
+h13=$(git -C "$tmp13" rev-parse HEAD)
+range_tdd "$tmp13" "$main13" "$h13"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-20
+else
+	bad AC-TD-20 "no-ff merge into main must still fail a bad second-parent commit: $_out"
+fi
+
+# --staged during a real merge: own production must not pass because main
+# brought in a test.
+tmp14=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11" "$tmp12" "$tmp13" "$tmp14"' EXIT
+init_tdd "$tmp14"
+printf 'base\n' >"$tmp14/README.md"
+git -C "$tmp14" add README.md
+git -C "$tmp14" commit -q -m base
+git -C "$tmp14" checkout -q -b feature
+printf 'side\n' >"$tmp14/README.md"
+git -C "$tmp14" add README.md
+git -C "$tmp14" commit -q -m side
+git -C "$tmp14" checkout -q main
+mkdir -p "$tmp14/tests"
+printf 'main-test\n' >"$tmp14/tests/m.test.sh"
+git -C "$tmp14" add tests/m.test.sh
+git -C "$tmp14" commit -q -m 'main test'
+main14=$(git -C "$tmp14" rev-parse HEAD)
+git -C "$tmp14" update-ref refs/remotes/origin/main "$main14"
+git -C "$tmp14" checkout -q feature
+git -C "$tmp14" merge --no-commit --no-ff main
+mkdir -p "$tmp14/app"
+printf 'evil\n' >"$tmp14/app/evil.sh"
+git -C "$tmp14" add app/evil.sh
+set +e
+out14=$(cd "$tmp14" && env RELAY_TDD_BASE=origin/main "$td" --staged 2>&1)
+code14=$?
+set -e
+if [ "$code14" -eq 1 ]; then
+	ok AC-TD-21
+else
+	bad AC-TD-21 "staged own prod during merge must not pass because main added a test: $out14"
 fi
 
 finish

@@ -8,17 +8,20 @@
 #   2. the second parent is an ancestor of origin/main (RELAY_TDD_BASE overrides)
 #   3. no edits of its own: `git diff-tree --cc --no-commit-id -r` is empty,
 #      or its tree equals `git merge-tree --write-tree p1 p2`
+# Integration merge: first parent is on the PR base and there are no own
+# edits (GitHub's test merge of a PR into main, or `git merge --no-ff`
+# into main). The merge itself is not judged; every commit reachable
+# from the second parent (against the PR base) still is.
 # Otherwise only the merge's own edits are judged (`git diff-tree --cc`,
 # or the diff against `git merge-tree --write-tree p1 p2`). Files that
 # arrived from a parent (including a test on main) do not count as the
-# merge's own. A 2-parent merge with no own edits that still is not
-# skippable (second parent off the PR base) fails closed. Root commits
-# use --root. 3 or more parents fail closed.
+# merge's own. Root commits use --root. 3 or more parents fail closed.
 #
 # MERGE_HEAD is a local convenience, not a trusted signal. --staged honours
-# it only after the same three checks (HEAD+MERGE_HEAD, MERGE_HEAD on the
-# PR base, index tree equals a clean merge-tree). A faked .git/MERGE_HEAD
-# falls through to the companion rule. CI / pre-push `--range` is the gate.
+# a verified clean merge from the PR base, or else judges only own edits
+# (index vs merge-tree, or paths that differ from both parents). A faked
+# .git/MERGE_HEAD cannot skip via incoming tests. CI / pre-push `--range`
+# is the gate.
 
 set -eu
 
@@ -135,14 +138,25 @@ is_clean_own_edits() {
 	[ "$_auto" = "$_tree" ]
 }
 
+on_pr_base() {
+	_br=$(pr_base_ref)
+	git rev-parse --verify "$_br" >/dev/null 2>&1 || return 1
+	git merge-base --is-ancestor "$1" "$_br"
+}
+
 is_skippable_merge() {
 	# Skip only a clean two-parent merge whose second parent is on the PR base.
 	_c=$1
 	[ "$(parent_count "$_c")" -eq 2 ] || return 1
-	_p2=$(git rev-parse "${_c}^2")
-	_br=$(pr_base_ref)
-	git rev-parse --verify "$_br" >/dev/null 2>&1 || return 1
-	git merge-base --is-ancestor "$_p2" "$_br" || return 1
+	on_pr_base "$(git rev-parse "${_c}^2")" || return 1
+	is_clean_own_edits "$_c"
+}
+
+is_integration_merge() {
+	# Clean merge whose first parent is on the PR base (PR → main).
+	_c=$1
+	[ "$(parent_count "$_c")" -eq 2 ] || return 1
+	on_pr_base "$(git rev-parse "${_c}^1")" || return 1
 	is_clean_own_edits "$_c"
 }
 
@@ -160,8 +174,25 @@ merge_own_edit_files() {
 	git diff-tree --no-commit-id --name-only -r "$_auto" "${_c}^{tree}"
 }
 
+# Staged files the in-progress merge changed itself, not incoming parent files.
+staged_own_edit_files() {
+	_auto=$(git merge-tree --write-tree HEAD MERGE_HEAD 2>/dev/null) || _auto=
+	_idx=$(git write-tree)
+	if [ -n "$_auto" ]; then
+		git diff-tree --no-commit-id --name-only -r "$_auto" "$_idx"
+		return 0
+	fi
+	_a=$(mktemp)
+	_b=$(mktemp)
+	git diff --cached --name-only HEAD | sort >"$_a"
+	git diff --cached --name-only MERGE_HEAD | sort >"$_b"
+	comm -12 "$_a" "$_b"
+	rm -f "$_a" "$_b"
+}
+
 # MERGE_HEAD is not trusted on its own. Verify the in-progress merge, or
 # fall through so a faked file cannot skip the companion rule.
+_merge_own=0
 if [ "$mode" = staged ] && git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	_mh=$(git rev-parse MERGE_HEAD)
 	_br=$(pr_base_ref)
@@ -178,7 +209,8 @@ if [ "$mode" = staged ] && git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1;
 		printf 'tdd-order: verified clean merge from the PR base (local convenience; CI --range is the gate)\n'
 		exit 0
 	fi
-	# Unverified MERGE_HEAD: keep going and apply the companion rule.
+	# Unverified MERGE_HEAD: judge only own edits. Incoming tests do not count.
+	_merge_own=1
 fi
 
 if [ "$mode" = range ]; then
@@ -190,25 +222,45 @@ if [ "$mode" = range ]; then
 	if ! git rev-parse --verify "$head" >/dev/null 2>&1; then
 		relay_die "tdd-order: unknown head revision"
 	fi
+	# Expand integration merges so second-parent history is always checked.
+	_walk=$(mktemp)
+	_seen=$(mktemp)
+	_range_emit() {
+		if grep -qx "$1" "$_seen"; then
+			return 0
+		fi
+		printf '%s\n' "$1" >>"$_seen"
+		printf '%s\n' "$1" >>"$_walk"
+	}
+	for _c in $(git rev-list --reverse --root "${base}..${head}"); do
+		if [ "$(parent_count "$_c")" -eq 2 ] && is_integration_merge "$_c"; then
+			_p2=$(git rev-parse "${_c}^2")
+			_br=$(pr_base_ref)
+			if git rev-parse --verify "$_br" >/dev/null 2>&1; then
+				for _p2c in $(git rev-list --reverse --root "${_br}..${_p2}"); do
+					_range_emit "$_p2c"
+				done
+			fi
+		fi
+		_range_emit "$_c"
+	done
 	prev_had_test=0
 	# --root: include the initial commit and diff it against the empty tree.
-	for _c in $(git rev-list --reverse --root "${base}..${head}"); do
+	while IFS= read -r _c || [ -n "${_c:-}" ]; do
+		[ -z "$_c" ] && continue
 		_n=$(parent_count "$_c")
 		if [ "$_n" -ge 3 ]; then
+			rm -f "$_walk" "$_seen"
 			relay_err "tdd-order: commit ${_c} has ${_n} parents (octopus merges fail closed)"
 			exit 1
 		fi
 		if [ "$_n" -eq 2 ]; then
-			if is_skippable_merge "$_c"; then
+			if is_skippable_merge "$_c" || is_integration_merge "$_c"; then
 				prev_had_test=0
 				continue
 			fi
-			# Not skippable: only own edits. Incoming main files do not count.
+			# Not skippable: only own edits. Incoming parent files do not count.
 			_files=$(merge_own_edit_files "$_c")
-			if [ -z "$_files" ]; then
-				relay_err "tdd-order: commit ${_c} is a two-parent merge that is not a clean merge from the PR base"
-				exit 1
-			fi
 		else
 			_files=$(git diff-tree --root --no-commit-id --name-only -r "$_c")
 		fi
@@ -217,17 +269,23 @@ if [ "$mode" = range ]; then
 		_test=${_class#* }
 		if [ "$_prod" -eq 1 ]; then
 			if [ "$_test" -eq 0 ] && [ "$prev_had_test" -eq 0 ]; then
+				rm -f "$_walk" "$_seen"
 				relay_err "tdd-order: commit ${_c} changes production without a test change in this or the previous commit"
 				exit 1
 			fi
 		fi
 		prev_had_test=$_test
-	done
+	done <"$_walk"
+	rm -f "$_walk" "$_seen"
 	printf 'tdd-order: commit range %s..%s is ordered\n' "$base" "$head"
 	exit 0
 fi
 
-files=$(read_files)
+if [ "$_merge_own" -eq 1 ]; then
+	files=$(staged_own_edit_files)
+else
+	files=$(read_files)
+fi
 if ! check_companion "$files"; then
 	exit 1
 fi
