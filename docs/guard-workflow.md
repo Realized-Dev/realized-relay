@@ -22,12 +22,24 @@ After a review is submitted, `ci` (no secrets) re-runs. A
 `workflow_run` on that completion re-runs **label-guard** and
 **approver** from the trusted copy of this file.
 
+`workflow_run` and `pull_request_target` jobs have `GITHUB_SHA` equal
+to the default branch, so a native check run can land on `main`. Each
+job therefore posts a commit status (`guards / denylist`,
+`guards / label-guard`, `guards / approver`) on the PR head SHA
+(`pull_request.head.sha`, `workflow_run.head_sha`, or the PR resolved
+from that SHA through the API). The API path accepts only an open
+pull request whose `head.sha` matches and whose base repository is
+this repository, and fails closed unless exactly one PR matches. It
+does not use `workflow_run.pull_requests[0]`.
+
 ## Least privilege
 
-`contents: read` and `pull-requests: read` only. Credentials are not
-persisted on the checkout.
+`contents: read` and `pull-requests: read` on every job. Jobs that
+publish a head-SHA status also have `statuses: write`. No other write
+scopes. Credentials are not persisted on the checkout.
 
 ## Required checks
 
-GitHub may show these as `guards / denylist`, `guards / label-guard`,
-and `guards / approver`. Require them on the current head SHA.
+Require the commit statuses `guards / denylist`,
+`guards / label-guard`, and `guards / approver` on the current head
+SHA. Do not require the native `pull_request_target` check run.

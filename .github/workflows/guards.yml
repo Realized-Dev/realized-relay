@@ -29,17 +29,30 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      statuses: write
     steps:
       - name: Check out trusted base-branch scripts
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha }}
+      - name: Resolve the PR head SHA
+        id: ctx
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELAY_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RELAY_PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELAY_WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          set +x
+          ./checks/resolve-guard-context.sh >> "$GITHUB_OUTPUT"
       - name: Materialize pull request files as data
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RELAY_HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
         run: |
           set -eu
           set +x
@@ -47,15 +60,28 @@ jobs:
           mkdir -p "$dest"
           ./checks/materialize-pr-head.sh "$RELAY_HEAD_SHA" "$dest"
           printf 'RELAY_SCAN_ROOT=%s\n' "$dest" >> "$GITHUB_ENV"
-      - name: Scan materialized files with the trusted script
+      - name: Scan materialized files and publish on the PR head
         env:
           RELAY_DENYLIST: ${{ secrets.RELAY_DENYLIST }}
           RELAY_SCAN_ROOT: ${{ env.RELAY_SCAN_ROOT }}
           RELAY_CHECK_MODE: ci
+          RELAY_HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELAY_STATUS_CONTEXT: guards / denylist
         run: |
           set -eu
           set +x
+          set +e
           ./checks/denylist.sh
+          code=$?
+          set -e
+          state=failure
+          if [ "$code" -eq 0 ]; then
+            state=success
+          fi
+          ./checks/publish-head-status.sh "$RELAY_STATUS_CONTEXT" "$state" "trusted check on the PR head"
+          exit "$code"
 
   # One definition so label-guard and approver do not clone the checkout block.
   pr-guards:
@@ -67,6 +93,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      statuses: write
     strategy:
       fail-fast: false
       matrix:
@@ -81,14 +108,36 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.event.repository.default_branch }}
-      - name: Run the trusted ${{ matrix.job }} script
+      - name: Resolve the PR head SHA
+        id: ctx
         env:
-          RELAY_CHECK_MODE: ci
-          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          RELAY_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RELAY_PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELAY_WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -eu
           set +x
+          ./checks/resolve-guard-context.sh >> "$GITHUB_OUTPUT"
+      - name: Run the trusted script and publish on the PR head
+        env:
+          RELAY_CHECK_MODE: ci
+          RELAY_HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.ctx.outputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELAY_STATUS_CONTEXT: guards / ${{ matrix.job }}
+        run: |
+          set -eu
+          set +x
+          set +e
           ${{ matrix.script }}
+          code=$?
+          set -e
+          state=failure
+          if [ "$code" -eq 0 ]; then
+            state=success
+          fi
+          ./checks/publish-head-status.sh "$RELAY_STATUS_CONTEXT" "$state" "trusted check on the PR head"
+          exit "$code"

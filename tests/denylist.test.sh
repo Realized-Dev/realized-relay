@@ -90,4 +90,29 @@ rm -f "$wt/gone.txt"
 expect_exit AC-DL-17 0 env RELAY_DENYLIST='only-in-deleted-file' RELAY_SCAN_ROOT="$wt" "$dl"
 rm -rf "$wt"
 
+# Symlinks are skipped and never followed. The marker lives only in a
+# file outside the scan root, reached solely through a symlink. If the
+# scanner followed the link, this case would fail.
+linktree=$(mktemp -d)
+outside=$(mktemp -d)
+printf 'clean regular file\n' >"$linktree/ok.txt"
+printf '%s\n' "$marker" >"$outside/secret-target.txt"
+ln -s "$outside/secret-target.txt" "$linktree/alias.txt"
+expect_exit AC-DL-18 0 env RELAY_DENYLIST="$marker" RELAY_SCAN_ROOT="$linktree" "$dl"
+expect_contains AC-DL-18-msg 'no matches'
+expect_omits AC-DL-18-path 'alias.txt'
+rm -rf "$linktree" "$outside"
+
+# Ordinary English is not flagged. The pattern is a test-only token, not
+# sentence starts, weekdays, or product names.
+eng=$(mktemp -d)
+printf '%s\n' \
+	'The Scan starts on Monday.' \
+	'Linux and Docker ship on Friday.' \
+	'Local checks pass with a notice.' >"$eng/english.txt"
+expect_exit AC-DL-19 0 env RELAY_DENYLIST="${RELAY_TEST_NAMES:-ACDL00_ENV_NAME_TOKEN}" \
+	RELAY_SCAN_ROOT="$eng" "$dl"
+expect_contains AC-DL-19-msg 'no matches'
+rm -rf "$eng"
+
 finish
