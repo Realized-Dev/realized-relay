@@ -47,9 +47,12 @@ if [ "$scope" = range ]; then
 		fi
 	fi
 	if [ -n "$base" ]; then
+		# Authoritative tdd-order gate (CI / pre-push). MERGE_HEAD is ignored.
 		"$here/tdd-order.sh" --range "$base" "$head"
 	fi
 else
+	# Local convenience: tdd-order --staged verifies MERGE_HEAD; it does
+	# not trust the file on its own. A faked MERGE_HEAD does not skip.
 	"$here/tdd-order.sh" --staged
 fi
 

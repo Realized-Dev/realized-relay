@@ -67,12 +67,23 @@ else
 	bad AC-TD-09 "range should fail for impl-only: $out2"
 fi
 
-# Merge commits are not TDD production commits (merging main into a branch).
+init_tdd() {
+	_d=$1
+	git init -q -b main "$_d"
+	git -C "$_d" config user.email tdd@example.test
+	git -C "$_d" config user.name TDD
+}
+
+range_tdd() {
+	# usage: range_tdd <dir> <base> <head>  → sets _rc and _out
+	_rc=0
+	_out=$(cd "$1" && env RELAY_TDD_BASE=origin/main "$td" --range "$2" "$3" 2>&1) || _rc=$?
+}
+
+# Clean merge of origin/main into a feature branch: skip the merge, PASS.
 tmp3=$(mktemp -d)
 trap 'rm -rf "$tmp" "$tmp2" "$tmp3"' EXIT
-git init -q "$tmp3"
-git -C "$tmp3" config user.email tdd@example.test
-git -C "$tmp3" config user.name TDD Merge
+init_tdd "$tmp3"
 printf 'base\n' >"$tmp3/README.md"
 git -C "$tmp3" add README.md
 git -C "$tmp3" commit -q -m base
@@ -80,47 +91,189 @@ git -C "$tmp3" checkout -q -b feature
 printf 'side\n' >"$tmp3/README.md"
 git -C "$tmp3" add README.md
 git -C "$tmp3" commit -q -m side
-git -C "$tmp3" checkout -q -
+git -C "$tmp3" checkout -q main
 mkdir -p "$tmp3/app"
 printf 'from-main\n' >"$tmp3/app/demo.sh"
 git -C "$tmp3" add app/demo.sh
 git -C "$tmp3" commit -q -m 'main-only prod'
-b3=$(git -C "$tmp3" rev-parse HEAD)
+main3=$(git -C "$tmp3" rev-parse HEAD)
+git -C "$tmp3" update-ref refs/remotes/origin/main "$main3"
 git -C "$tmp3" checkout -q feature
-git -C "$tmp3" merge -q --no-edit -
+git -C "$tmp3" merge -q --no-edit main
 h3=$(git -C "$tmp3" rev-parse HEAD)
-set +e
-out3=$(cd "$tmp3" && "$td" --range "$b3" "$h3" 2>&1)
-code3=$?
-set -e
-if [ "$code3" -eq 0 ]; then
+range_tdd "$tmp3" "$main3" "$h3"
+if [ "$_rc" -eq 0 ]; then
 	ok AC-TD-10
 else
-	bad AC-TD-10 "range should skip the merge commit: $out3"
+	bad AC-TD-10 "clean main merge should pass: $_out"
 fi
 
-# --staged during a merge (MERGE_HEAD present) must not fail companion.
+# Faked MERGE_HEAD must not skip the companion rule.
 tmp4=$(mktemp -d)
 trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4"' EXIT
-git init -q "$tmp4"
-git -C "$tmp4" config user.email tdd@example.test
-git -C "$tmp4" config user.name TDD MergeHead
+init_tdd "$tmp4"
 printf 'base\n' >"$tmp4/README.md"
 git -C "$tmp4" add README.md
 git -C "$tmp4" commit -q -m base
 mkdir -p "$tmp4/app"
 printf 'prod\n' >"$tmp4/app/demo.sh"
 git -C "$tmp4" add app/demo.sh
-# Fake an in-progress merge so --staged sees MERGE_HEAD.
 git -C "$tmp4" rev-parse HEAD >"$tmp4/.git/MERGE_HEAD"
 set +e
-out4=$(cd "$tmp4" && "$td" --staged 2>&1)
+out4=$(cd "$tmp4" && env RELAY_TDD_BASE=origin/main "$td" --staged 2>&1)
 code4=$?
 set -e
-if [ "$code4" -eq 0 ]; then
+if [ "$code4" -eq 1 ]; then
 	ok AC-TD-11
 else
-	bad AC-TD-11 "staged merge should skip companion: $out4"
+	bad AC-TD-11 "faked MERGE_HEAD should fail companion: $out4"
+fi
+
+# Merge of main that carries its own production edit: FAIL.
+tmp5=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5"' EXIT
+init_tdd "$tmp5"
+printf 'base\n' >"$tmp5/README.md"
+git -C "$tmp5" add README.md
+git -C "$tmp5" commit -q -m base
+git -C "$tmp5" checkout -q -b feature
+printf 'side\n' >"$tmp5/README.md"
+git -C "$tmp5" add README.md
+git -C "$tmp5" commit -q -m side
+git -C "$tmp5" checkout -q main
+printf 'main-more\n' >"$tmp5/NOTES.md"
+git -C "$tmp5" add NOTES.md
+git -C "$tmp5" commit -q -m 'main notes'
+main5=$(git -C "$tmp5" rev-parse HEAD)
+git -C "$tmp5" update-ref refs/remotes/origin/main "$main5"
+git -C "$tmp5" checkout -q feature
+git -C "$tmp5" merge --no-commit --no-ff main
+mkdir -p "$tmp5/app"
+printf 'own-edit\n' >"$tmp5/app/own.sh"
+git -C "$tmp5" add app/own.sh
+git -C "$tmp5" commit -q -m 'merge with own edit'
+h5=$(git -C "$tmp5" rev-parse HEAD)
+range_tdd "$tmp5" "$main5" "$h5"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-12
+else
+	bad AC-TD-12 "merge with own edits should fail: $_out"
+fi
+
+# Two-parent commit whose second parent is not on main: FAIL.
+tmp6=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6"' EXIT
+init_tdd "$tmp6"
+printf 'base\n' >"$tmp6/README.md"
+git -C "$tmp6" add README.md
+git -C "$tmp6" commit -q -m base
+main6=$(git -C "$tmp6" rev-parse HEAD)
+git -C "$tmp6" update-ref refs/remotes/origin/main "$main6"
+git -C "$tmp6" checkout -q -b side
+printf 'side\n' >"$tmp6/README.md"
+git -C "$tmp6" add README.md
+git -C "$tmp6" commit -q -m side
+p1_6=$(git -C "$tmp6" rev-parse HEAD)
+git -C "$tmp6" checkout -q -b feat
+mkdir -p "$tmp6/app"
+printf 'feat-prod\n' >"$tmp6/app/feat.sh"
+git -C "$tmp6" add app/feat.sh
+git -C "$tmp6" commit -q -m feat
+p2_6=$(git -C "$tmp6" rev-parse HEAD)
+git -C "$tmp6" checkout -q side
+git -C "$tmp6" merge -q --no-ff --no-edit feat
+h6=$(git -C "$tmp6" rev-parse HEAD)
+# Only the merge is in p2..merge; p2 is not an ancestor of origin/main.
+range_tdd "$tmp6" "$p2_6" "$h6"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-13
+else
+	bad AC-TD-13 "off-main 2-parent merge should fail: $_out"
+fi
+
+# Octopus (3 parents): FAIL.
+tmp7=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7"' EXIT
+init_tdd "$tmp7"
+printf 'base\n' >"$tmp7/README.md"
+git -C "$tmp7" add README.md
+git -C "$tmp7" commit -q -m base
+main7=$(git -C "$tmp7" rev-parse HEAD)
+git -C "$tmp7" update-ref refs/remotes/origin/main "$main7"
+git -C "$tmp7" checkout -q -b t1
+printf 't1\n' >"$tmp7/T1.md"
+git -C "$tmp7" add T1.md
+git -C "$tmp7" commit -q -m t1
+git -C "$tmp7" checkout -q -b t2 "$main7"
+printf 't2\n' >"$tmp7/T2.md"
+git -C "$tmp7" add T2.md
+git -C "$tmp7" commit -q -m t2
+git -C "$tmp7" checkout -q -b t3 "$main7"
+printf 't3\n' >"$tmp7/T3.md"
+git -C "$tmp7" add T3.md
+git -C "$tmp7" commit -q -m t3
+git -C "$tmp7" checkout -q t1
+git -C "$tmp7" merge --no-ff t2 t3 -m octopus
+n7=$(git -C "$tmp7" rev-parse HEAD^@ | awk 'END { print NR+0 }')
+h7=$(git -C "$tmp7" rev-parse HEAD)
+if [ "$n7" -ge 3 ]; then
+	ok AC-TD-14-shape
+else
+	bad AC-TD-14-shape "expected octopus, got ${n7} parents"
+fi
+range_tdd "$tmp7" "$main7" "$h7"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-14
+else
+	bad AC-TD-14 "octopus merge should fail: $_out"
+fi
+
+# Root commit with production files: FAIL (--root must not skip it).
+tmp8=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8"' EXIT
+init_tdd "$tmp8"
+mkdir -p "$tmp8/app"
+printf 'root-prod\n' >"$tmp8/app/root.sh"
+git -C "$tmp8" add app/root.sh
+git -C "$tmp8" commit -q -m root
+root8=$(git -C "$tmp8" rev-parse HEAD)
+git -C "$tmp8" checkout -q --orphan other
+git -C "$tmp8" commit -q --allow-empty -m other
+other8=$(git -C "$tmp8" rev-parse HEAD)
+range_tdd "$tmp8" "$other8" "$root8"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-15
+else
+	bad AC-TD-15 "root production commit should fail: $_out"
+fi
+
+# Verified in-progress merge of origin/main: --staged may skip (local convenience).
+tmp9=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9"' EXIT
+init_tdd "$tmp9"
+printf 'base\n' >"$tmp9/README.md"
+git -C "$tmp9" add README.md
+git -C "$tmp9" commit -q -m base
+git -C "$tmp9" checkout -q -b feature
+printf 'side\n' >"$tmp9/README.md"
+git -C "$tmp9" add README.md
+git -C "$tmp9" commit -q -m side
+git -C "$tmp9" checkout -q main
+printf 'main-more\n' >"$tmp9/NOTES.md"
+git -C "$tmp9" add NOTES.md
+git -C "$tmp9" commit -q -m 'main notes'
+main9=$(git -C "$tmp9" rev-parse HEAD)
+git -C "$tmp9" update-ref refs/remotes/origin/main "$main9"
+git -C "$tmp9" checkout -q feature
+git -C "$tmp9" merge --no-commit --no-ff main
+set +e
+out9=$(cd "$tmp9" && env RELAY_TDD_BASE=origin/main "$td" --staged 2>&1)
+code9=$?
+set -e
+if [ "$code9" -eq 0 ]; then
+	ok AC-TD-16
+else
+	bad AC-TD-16 "verified MERGE_HEAD of a clean main merge should pass: $out9"
 fi
 
 finish
