@@ -15,8 +15,8 @@ Supported agents:
 
 | Agent | Status | What this skill writes |
 |---|---|---|
-| Cursor | fully tested | `.cursor/rules/relay-pointer.mdc` |
-| Antigravity | fully tested | `.agents/rules/relay-pointer.md` with a valid `trigger` |
+| Cursor | supported | `.cursor/rules/relay-pointer.mdc` |
+| Antigravity | supported | `.agents/rules/relay-pointer.md` with a valid `trigger` |
 | Claude Code | beta | `CLAUDE.md` containing `@AGENTS.md` |
 | Codex | beta | nothing extra; Codex reads root `AGENTS.md` |
 

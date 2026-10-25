@@ -8,7 +8,7 @@ Pointer layers (`CLAUDE.md`, `.cursor/rules/`, `.agents/rules/`) must only name 
 
 Work in this order. Do not skip a step.
 
-1. **Spec.** Write or update a specification before changing behaviour. Use `docs/spec-template.md`. The spec is the source of truth; code expresses it.
+1. **Spec.** Write or update a specification before changing behaviour. Use `docs/spec-template.md` when that file exists. The spec is the source of truth; code expresses it.
 2. **Numbered acceptance criteria.** Every testable requirement is `AC-n` (`AC-1`, `AC-2`, …). Each criterion is independently testable. If a detail is missing, mark `[NEEDS CLARIFICATION]` and stop guessing.
 3. **Tests first.** Add or update tests that name or tag the `AC-n` they cover. Run them. They must fail for the missing behaviour, not because of a broken harness.
 4. **Implement.** Write the smallest change that makes those tests pass. Then refactor without changing behaviour.
