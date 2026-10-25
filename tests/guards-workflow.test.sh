@@ -83,9 +83,26 @@ else
 fi
 
 if grep -Eq 'contents: write|pull-requests: write|id-token:' "$gw"; then
-	bad AC-CI-14 'guards.yml must stay least-privilege (read only)'
+	bad AC-CI-14 'guards.yml must stay least-privilege (no contents/PR write, no id-token)'
 else
 	ok AC-CI-14
+fi
+
+if awk '
+	$0 ~ /^  denylist:/ { job = "denylist" }
+	$0 ~ /^  pr-guards:/ { job = "pr-guards" }
+	job == "denylist" && $0 ~ /statuses: write|checks: write/ { bad = 1 }
+	END { exit bad+0 }
+' "$gw"; then
+	ok AC-CI-14b
+else
+	bad AC-CI-14b 'only the pr-guards job may have statuses:write or checks:write'
+fi
+
+if grep -q 'statuses: write' "$gw" || grep -q 'checks: write' "$gw"; then
+	ok AC-CI-14c
+else
+	bad AC-CI-14c 'pr-guards must have statuses:write or checks:write to post on the PR head'
 fi
 
 if grep -q 'materialize-pr-head.sh' "$gw" && grep -q 'actions/checkout@v4' "$gw"; then
@@ -113,5 +130,23 @@ fi
 expect_exit AC-CI-18 1 "$CHECKS/materialize-pr-head.sh" '' /tmp/relay-empty
 expect_exit AC-CI-19 1 env -u GITHUB_REPOSITORY -u GH_REPO \
 	"$CHECKS/materialize-pr-head.sh" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa /tmp/relay-empty
+
+if grep -q 'resolve-guard-context.sh' "$gw" && grep -q 'publish-head-status.sh' "$gw"; then
+	ok AC-CI-20
+else
+	bad AC-CI-20 'workflow_run must resolve the PR head and publish a status on that SHA'
+fi
+
+if grep -q 'pull_requests\[0\]' "$gw"; then
+	bad AC-CI-21 'do not take PR_NUMBER from workflow_run.pull_requests[0] (empty on forks)'
+else
+	ok AC-CI-21
+fi
+
+if grep -q 'workflow_run.head_sha' "$gw"; then
+	ok AC-CI-22
+else
+	bad AC-CI-22 'workflow_run must pass workflow_run.head_sha into the resolver'
+fi
 
 finish

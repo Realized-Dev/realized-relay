@@ -22,12 +22,21 @@ After a review is submitted, `ci` (no secrets) re-runs. A
 `workflow_run` on that completion re-runs **label-guard** and
 **approver** from the trusted copy of this file.
 
+`workflow_run` jobs have `GITHUB_SHA` equal to the default branch, so
+their native check run can land on `main`. The job therefore posts a
+commit status (`guards / label-guard`, `guards / approver`) on the PR
+head SHA (`workflow_run.head_sha`, or the PR resolved from that SHA
+through the API). It does not use `workflow_run.pull_requests[0]`.
+
 ## Least privilege
 
-`contents: read` and `pull-requests: read` only. Credentials are not
+`contents: read` and `pull-requests: read` on every job. The
+`pr-guards` job also has `statuses: write` so it can post those
+head-SHA statuses. No other write scopes. Credentials are not
 persisted on the checkout.
 
 ## Required checks
 
-GitHub may show these as `guards / denylist`, `guards / label-guard`,
-and `guards / approver`. Require them on the current head SHA.
+Require the `denylist` check (pull_request_target) and the commit
+statuses `guards / label-guard` and `guards / approver` on the current
+head SHA.

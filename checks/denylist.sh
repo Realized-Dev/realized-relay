@@ -48,7 +48,9 @@ fi
 if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 	git -C "$root" -c core.quotePath=false ls-files >"$tmpdir/files"
 else
-	(CDPATH= cd -- "$root" && find . -type f ! -path './.git/*' | sed 's|^\./||') >"$tmpdir/files"
+	# -P: do not follow symlinks. List regular files and symlink names so
+	# the scan loop can skip links instead of reading their targets.
+	(CDPATH= cd -- "$root" && find -P . \( -type f -o -type l \) ! -path './.git/*' | sed 's|^\./||') >"$tmpdir/files"
 fi
 
 hit=0
@@ -56,7 +58,8 @@ while IFS= read -r _pat; do
 	[ -z "$_pat" ] && continue
 	while IFS= read -r _rel; do
 		[ -z "$_rel" ] && continue
-		# Deleted files, submodules and dangling symlinks have no content.
+		# Skip missing paths. Never follow symlinks (scan the name, not the target).
+		[ -L "$root/$_rel" ] && continue
 		[ -f "$root/$_rel" ] || continue
 		# -a: scan binary files too so -I cannot hide a match (B1).
 		# Discard grep stderr: it can echo the pattern on a bad regex.
