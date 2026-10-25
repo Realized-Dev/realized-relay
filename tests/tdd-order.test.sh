@@ -276,4 +276,75 @@ else
 	bad AC-TD-16 "verified MERGE_HEAD of a clean main merge should pass: $out9"
 fi
 
+# (a) Merge of main that adds its own production file while main adds a
+# test. First-parent comparison would see the test and pass; only the
+# merge's own edits (app/evil.sh) may be judged.
+tmp10=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10"' EXIT
+init_tdd "$tmp10"
+printf 'base\n' >"$tmp10/README.md"
+git -C "$tmp10" add README.md
+git -C "$tmp10" commit -q -m base
+git -C "$tmp10" checkout -q -b feature
+printf 'side\n' >"$tmp10/README.md"
+git -C "$tmp10" add README.md
+git -C "$tmp10" commit -q -m side
+git -C "$tmp10" checkout -q main
+mkdir -p "$tmp10/tests"
+printf 'main-test\n' >"$tmp10/tests/m.test.sh"
+git -C "$tmp10" add tests/m.test.sh
+git -C "$tmp10" commit -q -m 'main test'
+main10=$(git -C "$tmp10" rev-parse HEAD)
+git -C "$tmp10" update-ref refs/remotes/origin/main "$main10"
+git -C "$tmp10" checkout -q feature
+git -C "$tmp10" merge --no-commit --no-ff main
+mkdir -p "$tmp10/app"
+printf 'evil\n' >"$tmp10/app/evil.sh"
+git -C "$tmp10" add app/evil.sh
+git -C "$tmp10" commit -q -m 'merge with own evil'
+h10=$(git -C "$tmp10" rev-parse HEAD)
+range_tdd "$tmp10" "$main10" "$h10"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-17
+else
+	bad AC-TD-17 "own merge edit must not pass because main added a test: $_out"
+fi
+
+# (b) Conflict-resolution merge that adds production while main adds a
+# test. Combined diff is the resolution; first-parent includes the test.
+tmp11=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11"' EXIT
+init_tdd "$tmp11"
+printf 'base\n' >"$tmp11/README.md"
+git -C "$tmp11" add README.md
+git -C "$tmp11" commit -q -m base
+git -C "$tmp11" checkout -q -b feature
+printf 'feat\n' >"$tmp11/README.md"
+git -C "$tmp11" add README.md
+git -C "$tmp11" commit -q -m feat
+git -C "$tmp11" checkout -q main
+printf 'main\n' >"$tmp11/README.md"
+mkdir -p "$tmp11/tests"
+printf 'main-test\n' >"$tmp11/tests/m.test.sh"
+git -C "$tmp11" add README.md tests/m.test.sh
+git -C "$tmp11" commit -q -m 'main test and readme'
+main11=$(git -C "$tmp11" rev-parse HEAD)
+git -C "$tmp11" update-ref refs/remotes/origin/main "$main11"
+git -C "$tmp11" checkout -q feature
+set +e
+git -C "$tmp11" merge --no-commit --no-ff main
+set -e
+printf 'resolved\n' >"$tmp11/README.md"
+mkdir -p "$tmp11/app"
+printf 'prod\n' >"$tmp11/app/prod.sh"
+git -C "$tmp11" add README.md app/prod.sh
+git -C "$tmp11" commit -q -m 'merge conflict with prod'
+h11=$(git -C "$tmp11" rev-parse HEAD)
+range_tdd "$tmp11" "$main11" "$h11"
+if [ "$_rc" -eq 1 ]; then
+	ok AC-TD-18
+else
+	bad AC-TD-18 "conflict-resolution prod must not pass because main added a test: $_out"
+fi
+
 finish

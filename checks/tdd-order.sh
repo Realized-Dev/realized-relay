@@ -8,8 +8,12 @@
 #   2. the second parent is an ancestor of origin/main (RELAY_TDD_BASE overrides)
 #   3. no edits of its own: `git diff-tree --cc --no-commit-id -r` is empty,
 #      or its tree equals `git merge-tree --write-tree p1 p2`
-# Otherwise the commit is checked against its first parent (root: empty tree,
-# via --root). 3 or more parents fail closed.
+# Otherwise only the merge's own edits are judged (`git diff-tree --cc`,
+# or the diff against `git merge-tree --write-tree p1 p2`). Files that
+# arrived from a parent (including a test on main) do not count as the
+# merge's own. A 2-parent merge with no own edits that still is not
+# skippable (second parent off the PR base) fails closed. Root commits
+# use --root. 3 or more parents fail closed.
 #
 # MERGE_HEAD is a local convenience, not a trusted signal. --staged honours
 # it only after the same three checks (HEAD+MERGE_HEAD, MERGE_HEAD on the
@@ -142,6 +146,20 @@ is_skippable_merge() {
 	is_clean_own_edits "$_c"
 }
 
+# Files the merge changed itself, not files that arrived from a parent.
+merge_own_edit_files() {
+	_c=$1
+	_cc=$(git diff-tree --cc --no-commit-id --name-only -r "$_c")
+	if [ -n "$_cc" ]; then
+		printf '%s\n' "$_cc"
+		return 0
+	fi
+	_p1=$(git rev-parse "${_c}^1")
+	_p2=$(git rev-parse "${_c}^2")
+	_auto=$(git merge-tree --write-tree "$_p1" "$_p2" 2>/dev/null) || return 0
+	git diff-tree --no-commit-id --name-only -r "$_auto" "${_c}^{tree}"
+}
+
 # MERGE_HEAD is not trusted on its own. Verify the in-progress merge, or
 # fall through so a faked file cannot skip the companion rule.
 if [ "$mode" = staged ] && git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
@@ -185,8 +203,12 @@ if [ "$mode" = range ]; then
 				prev_had_test=0
 				continue
 			fi
-			# Not skippable: classify the merge against its first parent.
-			_files=$(git diff-tree --root --no-commit-id --name-only -r "${_c}^1" "$_c")
+			# Not skippable: only own edits. Incoming main files do not count.
+			_files=$(merge_own_edit_files "$_c")
+			if [ -z "$_files" ]; then
+				relay_err "tdd-order: commit ${_c} is a two-parent merge that is not a clean merge from the PR base"
+				exit 1
+			fi
 		else
 			_files=$(git diff-tree --root --no-commit-id --name-only -r "$_c")
 		fi
