@@ -11,7 +11,8 @@ relay_die() {
 }
 
 relay_notice() {
-	printf 'notice: %s\n' "$*"
+	# Notices go to stderr so command substitution (label-guard --gated-only) stays clean.
+	printf 'notice: %s\n' "$*" >&2
 }
 
 relay_trim() {
