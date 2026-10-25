@@ -91,18 +91,19 @@ fi
 if awk '
 	$0 ~ /^  denylist:/ { job = "denylist" }
 	$0 ~ /^  pr-guards:/ { job = "pr-guards" }
-	job == "denylist" && $0 ~ /statuses: write|checks: write/ { bad = 1 }
-	END { exit bad+0 }
+	job == "denylist" && $0 ~ /statuses: write|checks: write/ { dwrite = 1 }
+	job == "pr-guards" && $0 ~ /statuses: write|checks: write/ { pwrite = 1 }
+	END { exit (dwrite && pwrite) ? 0 : 1 }
 ' "$gw"; then
 	ok AC-CI-14b
 else
-	bad AC-CI-14b 'only the pr-guards job may have statuses:write or checks:write'
+	bad AC-CI-14b 'denylist and pr-guards must each have statuses:write or checks:write'
 fi
 
 if grep -q 'statuses: write' "$gw" || grep -q 'checks: write' "$gw"; then
 	ok AC-CI-14c
 else
-	bad AC-CI-14c 'pr-guards must have statuses:write or checks:write to post on the PR head'
+	bad AC-CI-14c 'jobs that publish on the PR head must have statuses:write or checks:write'
 fi
 
 if grep -q 'materialize-pr-head.sh' "$gw" && grep -q 'actions/checkout@v4' "$gw"; then
@@ -147,6 +148,26 @@ if grep -q 'workflow_run.head_sha' "$gw"; then
 	ok AC-CI-22
 else
 	bad AC-CI-22 'workflow_run must pass workflow_run.head_sha into the resolver'
+fi
+
+# denylist must publish a commit status on the resolved PR head.
+if awk '
+	$0 ~ /^  denylist:/ { job = "denylist" }
+	$0 ~ /^  pr-guards:/ { job = "other" }
+	job == "denylist" && $0 ~ /publish-head-status.sh/ { pub = 1 }
+	job == "denylist" && $0 ~ /guards \/ denylist/ { ctx = 1 }
+	END { exit (pub && ctx) ? 0 : 1 }
+' "$gw"; then
+	ok AC-CI-23
+else
+	bad AC-CI-23 'denylist must publish guards / denylist on the PR head SHA'
+fi
+
+if grep -q 'guards / denylist' "$ROOT/docs/guard-workflow.md" \
+	&& grep -q 'commit statuses' "$ROOT/docs/guard-workflow.md"; then
+	ok AC-CI-24
+else
+	bad AC-CI-24 'docs must require the denylist commit status on the PR head'
 fi
 
 finish

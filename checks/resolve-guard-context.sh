@@ -57,13 +57,29 @@ fi
 
 [ -n "$_json" ] || relay_die "resolve-guard-context: empty commits-pulls payload"
 relay_require_jq
-pr_num=$(printf '%s' "$_json" | jq -r '
+# Exact match only: open, head.sha == this SHA, base repo == this repo.
+# Fail closed unless exactly one pull request matches (never take first).
+_sel=$(printf '%s' "$_json" | jq -c --arg repo "$repo" --arg sha "$head" '
 	if type != "array" then error("not an array")
-	else (map(.number) | map(select(. != null)) | first // empty)
+	else
+		[ .[]
+			| select(
+				.state == "open"
+				and ((.head.sha // "") | ascii_downcase) == ($sha | ascii_downcase)
+				and ((.base.repo.full_name // "") | ascii_downcase) == ($repo | ascii_downcase)
+			)
+			| .number
+			| select(. != null)
+		]
 	end
 ' 2>/dev/null || true)
 
-[ -n "$pr_num" ] || relay_die "resolve-guard-context: no pull request for the head SHA"
+[ -n "$_sel" ] || relay_die "resolve-guard-context: commits-pulls payload was not a JSON array"
+_count=$(printf '%s' "$_sel" | jq 'length')
+if [ "$_count" -ne 1 ]; then
+	relay_die "resolve-guard-context: expected exactly one matching open PR (got ${_count})"
+fi
+pr_num=$(printf '%s' "$_sel" | jq -r '.[0]')
 
 emit "$head" "$pr_num"
 exit 0
