@@ -1,0 +1,9 @@
+#!/bin/sh
+# Enable: git config core.hooksPath .githooks
+# MERGE_HEAD is not trusted on its own. tdd-order verifies a clean
+# two-parent merge from origin/main before treating it as a skip;
+# a faked .git/MERGE_HEAD does not bypass the companion rule.
+# CI / pre-push `--range` is the real gate.
+set -eu
+hook_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+"$hook_dir/../checks/run-local.sh" --staged

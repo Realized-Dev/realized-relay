@@ -1,3 +1,10 @@
+# Tool output (not source)
+report/
+jscpd-report/
+.jscpd-report/
+*.tmp
+
+# Local agent settings and secrets (never commit)
 CLAUDE.local.md
 .claude/settings.local.json
 *.pem

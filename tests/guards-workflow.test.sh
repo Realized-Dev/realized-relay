@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# AC-CI: guards.yml is the trusted base-branch workflow. This split PR
-# does not ship ci.yml; #3 keeps the PR-controlled checks.
+# AC-CI: guards.yml is the trusted base-branch workflow (from main / #4).
+# Stream B (#3) also ships ci.yml for PR-controlled checks.
 set -euo pipefail
 # shellcheck disable=SC1091
 . "$(CDPATH= cd -- "$(dirname "$0")" && pwd)/helpers.sh"
 gw="$ROOT/.github/workflows/guards.yml"
+wf="$ROOT/.github/workflows/ci.yml"
 
 [ -f "$gw" ] && ok AC-CI-01 || bad AC-CI-01 'guards.yml missing'
-if [ -f "$ROOT/.github/workflows/ci.yml" ]; then
-	bad AC-CI-01b 'this split must not include the PR-controlled ci.yml'
+if [ -f "$wf" ] && grep -q 'RELAY_DENYLIST' "$wf"; then
+	bad AC-CI-01b 'ci.yml must not carry RELAY_DENYLIST; that secret stays in guards.yml'
 else
 	ok AC-CI-01b
 fi
