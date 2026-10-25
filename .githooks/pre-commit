@@ -1,0 +1,5 @@
+#!/bin/sh
+# Enable: git config core.hooksPath .githooks
+set -eu
+hook_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+"$hook_dir/../checks/run-local.sh" --staged

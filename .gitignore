@@ -1,0 +1,5 @@
+# Tool output (not source)
+report/
+jscpd-report/
+.jscpd-report/
+*.tmp

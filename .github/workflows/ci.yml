@@ -1,0 +1,155 @@
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  script-tests:
+    name: script-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run hook and check-script tests
+        run: ./tests/run.sh
+
+  local-checks:
+    name: local-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Re-run the hook suite on the pull request range
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
+        env:
+          RELAY_SKIP_SCRIPT_TESTS: "1"
+        run: ./checks/run-local.sh --range "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+      - name: Re-run the hook suite on a push range
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          RELAY_SKIP_SCRIPT_TESTS: "1"
+        run: ./checks/run-local.sh --range "${{ github.event.before }}" "${{ github.sha }}"
+      - name: Re-run staged local checks
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELAY_SKIP_SCRIPT_TESTS: "1"
+        run: ./checks/run-local.sh --staged
+
+  line-budget:
+    name: line-budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: ./checks/line-budget.sh
+
+  rules-frontmatter:
+    name: rules-frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: ./checks/rules-frontmatter.sh
+
+  denylist:
+    name: denylist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Scan using the CI secret only
+        env:
+          RELAY_DENYLIST: ${{ secrets.RELAY_DENYLIST }}
+        run: ./checks/denylist.sh
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks CLI
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          set -eu
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --fail --silent --show-error --location --retry 4 --output /tmp/gitleaks.tgz "$url"
+          tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan the full git history
+        run: gitleaks git --redact --exit-code=1 --log-opts=--all
+
+  jscpd:
+    name: jscpd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Duplication at 50 tokens or 10 lines
+        run: >
+          npx --yes jscpd@4
+          --min-tokens 50
+          --min-lines 10
+          --threshold 0
+          --ignore "**/node_modules/**,**/.git/**,**/report/**,**/jscpd-report/**"
+          .
+
+  label-guard:
+    name: label-guard
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read labels (fail closed)
+        env:
+          RELAY_CHECK_MODE: ci
+          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: ./checks/label-guard.sh
+
+  approver:
+    name: approver
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require approval on the current head SHA when gated
+        env:
+          RELAY_CHECK_MODE: ci
+          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: ./checks/approver-check.sh

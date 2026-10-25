@@ -1,0 +1,6 @@
+Enable the repository hooks (no extra packages):
+
+    git config core.hooksPath .githooks
+
+Git then runs .githooks/pre-commit and .githooks/pre-push. Hooks are
+bypassable with --no-verify; CI re-runs the same checks on the head SHA.
