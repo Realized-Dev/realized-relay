@@ -436,4 +436,35 @@ else
 	bad AC-TD-21 "staged own prod during merge must not pass because main added a test: $out14"
 fi
 
+# Faked MERGE_HEAD=origin/main with staged production must fail.
+# origin/main carries a test that the index does not; that deletion
+# must not count as a companion test change (AC-TD-22).
+tmp15=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11" "$tmp12" "$tmp13" "$tmp14" "$tmp15"' EXIT
+init_tdd "$tmp15"
+printf 'base\n' >"$tmp15/README.md"
+git -C "$tmp15" add README.md
+git -C "$tmp15" commit -q -m base
+old15=$(git -C "$tmp15" rev-parse HEAD)
+mkdir -p "$tmp15/tests"
+printf 'main-test\n' >"$tmp15/tests/m.test.sh"
+git -C "$tmp15" add tests/m.test.sh
+git -C "$tmp15" commit -q -m 'main test'
+main15=$(git -C "$tmp15" rev-parse HEAD)
+git -C "$tmp15" update-ref refs/remotes/origin/main "$main15"
+git -C "$tmp15" checkout -q -b feature "$old15"
+mkdir -p "$tmp15/app"
+printf 'prod\n' >"$tmp15/app/demo.sh"
+git -C "$tmp15" add app/demo.sh
+git -C "$tmp15" rev-parse origin/main >"$tmp15/.git/MERGE_HEAD"
+set +e
+out15=$(cd "$tmp15" && env RELAY_TDD_BASE=origin/main "$td" --staged 2>&1)
+code15=$?
+set -e
+if [ "$code15" -eq 1 ]; then
+	ok AC-TD-22
+else
+	bad AC-TD-22 "faked MERGE_HEAD=origin/main with staged prod must fail: $out15"
+fi
+
 finish

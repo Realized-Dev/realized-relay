@@ -174,19 +174,31 @@ merge_own_edit_files() {
 	git diff-tree --no-commit-id --name-only -r "$_auto" "${_c}^{tree}"
 }
 
+# Paths present in the index. Deletions and missing paths do not count.
+_index_present_paths() {
+	while IFS= read -r _p || [ -n "${_p:-}" ]; do
+		[ -z "$_p" ] && continue
+		if git ls-files --error-unmatch --cached -- "$_p" >/dev/null 2>&1; then
+			printf '%s\n' "$_p"
+		fi
+	done
+}
+
 # Staged files the in-progress merge changed itself, not incoming parent files.
+# Ignore deletions and paths missing from the index so a faked MERGE_HEAD
+# cannot hide staged production behind incoming tests.
 staged_own_edit_files() {
 	_auto=$(git merge-tree --write-tree HEAD MERGE_HEAD 2>/dev/null) || _auto=
 	_idx=$(git write-tree)
 	if [ -n "$_auto" ]; then
-		git diff-tree --no-commit-id --name-only -r "$_auto" "$_idx"
+		git diff-tree --diff-filter=d --no-commit-id --name-only -r "$_auto" "$_idx" | _index_present_paths
 		return 0
 	fi
 	_a=$(mktemp)
 	_b=$(mktemp)
-	git diff --cached --name-only HEAD | sort >"$_a"
-	git diff --cached --name-only MERGE_HEAD | sort >"$_b"
-	comm -12 "$_a" "$_b"
+	git diff --cached --diff-filter=d --name-only HEAD | sort >"$_a"
+	git diff --cached --diff-filter=d --name-only MERGE_HEAD | sort >"$_b"
+	comm -12 "$_a" "$_b" | _index_present_paths
 	rm -f "$_a" "$_b"
 }
 
