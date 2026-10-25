@@ -57,10 +57,13 @@ else
 	ok AC-CI-09
 fi
 
-if grep -qE 'RELAY_LABELS|RELAY_REVIEWS' "$wf"; then
-	bad AC-CI-10 'CI must not set RELAY_LABELS* or RELAY_REVIEWS* overrides'
+# Workflow must not inject fixtures or eval mode; CI=true ignores eval anyway.
+if grep -qE 'RELAY_LABELS|RELAY_REVIEWS|RELAY_CHECK_MODE=eval|RELAY_CHECK_MODE:[[:space:]]*eval' "$wf"; then
+	bad AC-CI-10 'CI must not set RELAY_LABELS*, RELAY_REVIEWS*, or RELAY_CHECK_MODE=eval'
 else
-	ok AC-CI-10
+	# Behavioral: eval fixtures are ignored when CI=true.
+	expect_exit AC-CI-10 1 env CI=true RELAY_CHECK_MODE=eval RELAY_LABELS=security \
+		"$CHECKS/label-guard.sh"
 fi
 
 finish

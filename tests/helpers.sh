@@ -18,6 +18,15 @@ bad() {
 	fi
 }
 
+# Fixture-driven checks must unset CI: RELAY_CHECK_MODE=eval is ignored when CI=true.
+# Unset fixture vars first so later NAME=value assignments are the only source.
+run_eval() {
+	env -u CI -u GITHUB_ACTIONS \
+		-u RELAY_LABELS -u RELAY_LABELS_JSON \
+		-u RELAY_REVIEWS -u RELAY_REVIEWS_JSON \
+		RELAY_CHECK_MODE=eval "$@"
+}
+
 expect_exit() {
 	_id=$1
 	_want=$2

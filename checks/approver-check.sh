@@ -1,10 +1,10 @@
 #!/bin/sh
 # Required-approver check, tied to the current head SHA.
 # Fail closed: missing SHA, unread labels, API errors, empty output,
-# stale approval, dismissed/comment-only reviews, a later
-# changes-requested review from the same user, or any reviewer's
-# latest review on the head requesting changes (N1).
-# When no gated label is present and labels were read, approval is not required.
+# stale approval, dismissed/comment-only reviews, or any reviewer's
+# latest APPROVED/CHANGES_REQUESTED decision being CHANGES_REQUESTED
+# (any SHA). That reviewer's later APPROVED on the current head clears it,
+# matching GitHub. COMMENTED does not clear a changes-requested decision.
 
 set -eu
 
@@ -93,13 +93,17 @@ collect_reviews_tsv() {
 
 tsv=$(collect_reviews_tsv) || exit 1
 
-# Latest submitted review per user (highest numeric id wins).
+# Latest APPROVED / CHANGES_REQUESTED decision per user (COMMENTED ignored).
+# Highest numeric id wins. A CR on an older SHA stays outstanding until
+# that same reviewer later APPROVES the current head.
 latest=$(printf '%s\n' "$tsv" | awk -F '	' '
 	NF < 4 { next }
 	{
 		id = $1 + 0
 		user = $2
+		state = $3
 		if (user == "") next
+		if (state != "APPROVED" && state != "CHANGES_REQUESTED") next
 		if (!(user in seen) || id >= seen[user]) {
 			seen[user] = id
 			rec[user] = $0
@@ -111,18 +115,16 @@ latest=$(printf '%s\n' "$tsv" | awk -F '	' '
 ')
 
 approved=0
-changes=0
+outstanding=0
 while IFS= read -r _line || [ -n "${_line:-}" ]; do
 	[ -z "$_line" ] && continue
 	_state=$(printf '%s' "$_line" | awk -F '	' '{ print $3 }')
 	_sha=$(relay_normalize_sha "$(printf '%s' "$_line" | awk -F '	' '{ print $4 }')")
-	if [ "$_sha" = "$head" ] && relay_is_full_sha "$_sha"; then
-		if [ "$_state" = CHANGES_REQUESTED ]; then
-			changes=1
-		fi
-		if [ "$_state" = APPROVED ]; then
-			approved=1
-		fi
+	if [ "$_state" = CHANGES_REQUESTED ]; then
+		outstanding=1
+	fi
+	if [ "$_state" = APPROVED ] && [ "$_sha" = "$head" ] && relay_is_full_sha "$_sha"; then
+		approved=1
 	fi
 done <<EOF
 $latest
@@ -130,8 +132,8 @@ EOF
 
 printf 'approver: required (gated labels present)\n'
 printf 'head: %s\n' "$head"
-if [ "$changes" -eq 1 ]; then
-	relay_err "result: CHANGES_REQUESTED on the current head SHA (fail closed)"
+if [ "$outstanding" -eq 1 ]; then
+	relay_err "result: CHANGES_REQUESTED still outstanding (reviewer must approve the current head SHA)"
 	exit 1
 fi
 if [ "$approved" -eq 1 ]; then

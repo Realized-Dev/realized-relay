@@ -89,14 +89,10 @@ relay_running_in_ci() {
 }
 
 relay_check_mode() {
-	# Test fixtures (RELAY_LABELS* / RELAY_REVIEWS*) are ignored when CI=true
-	# unless the caller explicitly sets RELAY_CHECK_MODE=eval.
+	# Test fixtures (RELAY_LABELS* / RELAY_REVIEWS*) and RELAY_CHECK_MODE=eval
+	# are ignored when CI=true. Fixture-driven tests must unset CI.
 	if relay_ci_claimed; then
-		if [ "${RELAY_CHECK_MODE:-}" = eval ]; then
-			printf '%s' eval
-			return
-		fi
-		printf '%s' "${RELAY_CHECK_MODE:-ci}"
+		printf '%s' ci
 		return
 	fi
 	if [ -n "${RELAY_CHECK_MODE:-}" ]; then
@@ -112,5 +108,8 @@ relay_check_mode() {
 }
 
 relay_allow_eval_overrides() {
+	if relay_ci_claimed; then
+		return 1
+	fi
 	[ "$(relay_check_mode)" = eval ]
 }
