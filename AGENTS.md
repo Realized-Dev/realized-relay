@@ -63,7 +63,7 @@ If the change is labelled, or is about, any of `sensitive`, `migration`, `approv
 
 ## Do not
 
-- Copy, port, or read code from other Realized repositories. Write from the spec and public docs.
+- Copy, port, or read code from other repositories. Write from the spec and public docs.
 - Put credentials, tokens, private keys, or personal or client identifiers in the tree or in output.
 - Restate this file inside a pointer layer.
 - Expand `README.md` beyond a short human overview. That file is for people; this file is for agents.
