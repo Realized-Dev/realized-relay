@@ -5,9 +5,20 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(CDPATH= cd -- "$(dirname "$0")" && pwd)/helpers.sh"
 dl="$CHECKS/denylist.sh"
-# Header must name a role, not a person.
-if grep -E 'Jose|Fernando|Rafael' "$dl" >/dev/null; then
-	bad AC-DL-00 'denylist.sh names a person; use a role'
+# Comments must name a role, not a person. A personal name is any
+# Title-case word that is not a known sentence opener or product word.
+# Do not list given names here; the shape of the token is the check.
+_dl_title_allow='Scan|The|Local|Discard|Actions'
+_dl_named=$(
+	{
+		grep -E '^[[:space:]]*#' "$dl" \
+			| grep -oE '\b[A-Z][a-z]{2,}\b' \
+			| grep -Ev "^(${_dl_title_allow})$" \
+			| sort -u
+	} || true
+)
+if [ -n "$_dl_named" ]; then
+	bad AC-DL-00 "denylist.sh comments name a person (use a role): ${_dl_named}"
 else
 	ok AC-DL-00
 fi
