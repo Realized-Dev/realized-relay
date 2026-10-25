@@ -47,13 +47,24 @@ for job in script-tests local-checks gitleaks jscpd line-budget rules-frontmatte
 	fi
 done
 
-for job in denylist label-guard approver; do
-	if grep -q "^  ${job}:" "$gw"; then
+if grep -q "^  denylist:" "$gw"; then
+	ok AC-CI-07-denylist
+else
+	bad AC-CI-07-denylist 'missing job denylist in guards.yml'
+fi
+if grep -q "^  denylist:" "$wf"; then
+	bad AC-CI-07-denylist-untrusted 'denylist must not run from the PR-controlled ci.yml'
+else
+	ok AC-CI-07-denylist-untrusted
+fi
+
+for job in label-guard approver; do
+	if grep -q "job: ${job}" "$gw"; then
 		ok "AC-CI-07-${job}"
 	else
-		bad "AC-CI-07-${job}" "missing job ${job} in guards.yml"
+		bad "AC-CI-07-${job}" "missing ${job} in guards.yml"
 	fi
-	if grep -q "^  ${job}:" "$wf"; then
+	if grep -qE "^  ${job}:|${job}\\.sh" "$wf"; then
 		bad "AC-CI-07-${job}-untrusted" "${job} must not run from the PR-controlled ci.yml"
 	else
 		ok "AC-CI-07-${job}-untrusted"
