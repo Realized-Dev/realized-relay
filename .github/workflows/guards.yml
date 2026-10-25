@@ -36,7 +36,8 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha }}
-      - name: Resolve the PR head SHA
+      - &resolve_pr_head
+        name: Resolve the PR head SHA
         id: ctx
         env:
           GH_TOKEN: ${{ github.token }}
@@ -108,18 +109,8 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.event.repository.default_branch }}
-      - name: Resolve the PR head SHA
-        id: ctx
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          RELAY_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          RELAY_PR_NUMBER: ${{ github.event.pull_request.number }}
-          RELAY_WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -eu
-          set +x
-          ./checks/resolve-guard-context.sh >> "$GITHUB_OUTPUT"
+      # Same resolve-head step as denylist (YAML alias; behaviour unchanged).
+      - *resolve_pr_head
       - name: Run the trusted script and publish on the PR head
         env:
           RELAY_CHECK_MODE: ci
