@@ -1,0 +1,5 @@
+language: "en-GB"
+reviews:
+  auto_review:
+    enabled: true
+    drafts: true
