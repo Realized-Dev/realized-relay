@@ -23,13 +23,14 @@ emit() {
 
 collect_names() {
 	# Prints one normalized-from-raw name per line (raw, not yet normalized).
-	if [ -n "${RELAY_LABELS+x}" ]; then
+	# RELAY_LABELS* are test-only and are ignored when CI=true (N3).
+	if relay_allow_eval_overrides && [ -n "${RELAY_LABELS+x}" ]; then
 		printf '%s\n' "$RELAY_LABELS"
 		return 0
 	fi
 
 	_json=
-	if [ -n "${RELAY_LABELS_JSON+x}" ]; then
+	if relay_allow_eval_overrides && [ -n "${RELAY_LABELS_JSON+x}" ]; then
 		_json=$RELAY_LABELS_JSON
 	else
 		_mode=$(relay_check_mode)

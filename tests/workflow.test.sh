@@ -57,4 +57,10 @@ else
 	ok AC-CI-09
 fi
 
+if grep -qE 'RELAY_LABELS|RELAY_REVIEWS' "$wf"; then
+	bad AC-CI-10 'CI must not set RELAY_LABELS* or RELAY_REVIEWS* overrides'
+else
+	ok AC-CI-10
+fi
+
 finish

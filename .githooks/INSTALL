@@ -4,3 +4,6 @@ Enable the repository hooks (no extra packages):
 
 Git then runs .githooks/pre-commit and .githooks/pre-push. Hooks are
 bypassable with --no-verify; CI re-runs the same checks on the head SHA.
+
+N2 (accepted): local hooks skip the label guard and approver when there
+is no pull request yet, or when gh is missing. CI always fail-closes.

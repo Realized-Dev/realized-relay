@@ -1,8 +1,9 @@
 #!/bin/sh
 # Required-approver check, tied to the current head SHA.
 # Fail closed: missing SHA, unread labels, API errors, empty output,
-# stale approval, dismissed/comment-only reviews, or a later
-# changes-requested review from the same user.
+# stale approval, dismissed/comment-only reviews, a later
+# changes-requested review from the same user, or any reviewer's
+# latest review on the head requesting changes (N1).
 # When no gated label is present and labels were read, approval is not required.
 
 set -eu
@@ -40,13 +41,14 @@ if [ "$gated" = no ]; then
 fi
 
 collect_reviews_tsv() {
-	if [ -n "${RELAY_REVIEWS+x}" ]; then
+	# RELAY_REVIEWS* are test-only and are ignored when CI=true (N3).
+	if relay_allow_eval_overrides && [ -n "${RELAY_REVIEWS+x}" ]; then
 		printf '%s\n' "$RELAY_REVIEWS"
 		return 0
 	fi
 
 	_json=
-	if [ -n "${RELAY_REVIEWS_JSON+x}" ]; then
+	if relay_allow_eval_overrides && [ -n "${RELAY_REVIEWS_JSON+x}" ]; then
 		_json=$RELAY_REVIEWS_JSON
 	else
 		if [ "$mode" = hook ]; then
@@ -109,14 +111,17 @@ latest=$(printf '%s\n' "$tsv" | awk -F '	' '
 ')
 
 approved=0
+changes=0
 while IFS= read -r _line || [ -n "${_line:-}" ]; do
 	[ -z "$_line" ] && continue
 	_state=$(printf '%s' "$_line" | awk -F '	' '{ print $3 }')
 	_sha=$(relay_normalize_sha "$(printf '%s' "$_line" | awk -F '	' '{ print $4 }')")
-	if [ "$_state" = APPROVED ] && [ "$_sha" = "$head" ]; then
-		if relay_is_full_sha "$_sha"; then
+	if [ "$_sha" = "$head" ] && relay_is_full_sha "$_sha"; then
+		if [ "$_state" = CHANGES_REQUESTED ]; then
+			changes=1
+		fi
+		if [ "$_state" = APPROVED ]; then
 			approved=1
-			break
 		fi
 	fi
 done <<EOF
@@ -125,6 +130,10 @@ EOF
 
 printf 'approver: required (gated labels present)\n'
 printf 'head: %s\n' "$head"
+if [ "$changes" -eq 1 ]; then
+	relay_err "result: CHANGES_REQUESTED on the current head SHA (fail closed)"
+	exit 1
+fi
 if [ "$approved" -eq 1 ]; then
 	printf 'result: APPROVED review on the current head SHA\n'
 	exit 0

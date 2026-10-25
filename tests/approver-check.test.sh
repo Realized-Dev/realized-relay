@@ -73,4 +73,25 @@ expect_exit AC-AP-19 1 env RELAY_LABELS=legal RELAY_HEAD_SHA="$HEAD40" \
 	RELAY_REVIEWS="$(printf '40\talice\tAPPROVED\t%s\t2026-10-01T00:00:00Z\n' "${HEAD40:0:12}")" \
 	RELAY_CHECK_MODE=eval "$ap"
 
+# N1: any latest CHANGES_REQUESTED on the head blocks even if someone else approved.
+split=$(printf '%s\n%s\n' \
+	"50	alice	APPROVED	${HEAD40}	2026-10-01T00:00:00Z" \
+	"51	bob	CHANGES_REQUESTED	${HEAD40}	2026-10-02T00:00:00Z")
+expect_exit AC-AP-20 1 env RELAY_LABELS=security RELAY_HEAD_SHA="$HEAD40" \
+	RELAY_REVIEWS="$split" RELAY_CHECK_MODE=eval "$ap"
+expect_contains AC-AP-21 'CHANGES_REQUESTED on the current head SHA'
+
+# Changes on an older SHA do not block a current approval.
+old_cr=$(printf '%s\n%s\n' \
+	"60	alice	CHANGES_REQUESTED	${OTHER}	2026-10-01T00:00:00Z" \
+	"61	bob	APPROVED	${HEAD40}	2026-10-02T00:00:00Z")
+expect_exit AC-AP-22 0 env RELAY_LABELS=security RELAY_HEAD_SHA="$HEAD40" \
+	RELAY_REVIEWS="$old_cr" RELAY_CHECK_MODE=eval "$ap"
+
+# N3: CI=true ignores RELAY_LABELS* / RELAY_REVIEWS* unless MODE=eval.
+expect_exit AC-AP-23 1 env CI=true RELAY_CHECK_MODE=ci RELAY_LABELS=security \
+	RELAY_HEAD_SHA="$HEAD40" RELAY_REVIEWS="$(approved_on "$HEAD40")" "$ap"
+expect_exit AC-AP-24 0 env CI=true RELAY_CHECK_MODE=eval RELAY_LABELS=security \
+	RELAY_HEAD_SHA="$HEAD40" RELAY_REVIEWS="$(approved_on "$HEAD40")" "$ap"
+
 finish

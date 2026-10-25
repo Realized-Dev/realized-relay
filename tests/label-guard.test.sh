@@ -38,4 +38,9 @@ done
 expect_exit AC-LG-21 0 env RELAY_LABELS='enhancement' RELAY_CHECK_MODE=eval "$lg" --gated-only
 expect_contains AC-LG-22 no
 
+# N3: CI=true ignores RELAY_LABELS* unless MODE=eval.
+expect_exit AC-LG-23 1 env CI=true RELAY_CHECK_MODE=ci RELAY_LABELS=security "$lg"
+expect_exit AC-LG-24 0 env CI=true RELAY_CHECK_MODE=eval RELAY_LABELS=security "$lg"
+expect_contains AC-LG-25 'gated: yes'
+
 finish
