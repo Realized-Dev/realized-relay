@@ -49,4 +49,4 @@ Title: Print `ok` when the status tool is called with `--check`.
 - **AC-2:** When the status tool is invoked without `--check`, it does not print `ok`.
 - **AC-3:** When the status tool is invoked with an unknown flag, it exits non-zero and prints nothing that looks like a success token.
 
-Tests: `test_status_check_prints_ok_ac1`, `test_status_default_silent_ac2`, `test_status_unknown_flag_nonzero_ac3`.
+Tests: `test_status_check_prints_ok_AC-1`, `test_status_default_silent_AC-2`, `test_status_unknown_flag_nonzero_AC-3`.

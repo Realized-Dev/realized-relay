@@ -9,7 +9,7 @@ Create one focused commit on the current feature branch. Do not push.
 
 ## Steps
 
-1. Run `git status`, `git diff`, and `git log --oneline -10`. Read them before staging.
+1. Run `git status`, `git diff`, `git diff --cached`, and `git log --oneline -10`. Read them before staging. Refuse if `git diff --cached` shows anything already staged.
 2. Refuse if the branch is `main` or `master`. Ask for a feature branch first.
 3. Refuse if the diff contains secrets, personal data, client data, or credentials. Remove them; do not commit.
 4. If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, stop for the required-approver step. Do not commit past that stop.
