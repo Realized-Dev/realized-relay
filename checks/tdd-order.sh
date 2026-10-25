@@ -93,6 +93,13 @@ check_companion() {
 	return 0
 }
 
+# A merge commit (or a merge in progress) combines already-reviewed
+# history. Companion TDD applies to ordinary commits, not to merges.
+if [ "$mode" = staged ] && git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+	printf 'tdd-order: merge in progress, companion rule skipped\n'
+	exit 0
+fi
+
 if [ "$mode" = range ]; then
 	[ -n "$base" ] || relay_die "tdd-order --range needs a base revision"
 	[ -n "$head" ] || relay_die "tdd-order --range needs a head revision"
@@ -105,6 +112,11 @@ if [ "$mode" = range ]; then
 	prev_had_test=0
 	# Oldest first so a red test commit can unlock the next production commit.
 	for _c in $(git rev-list --reverse "${base}..${head}"); do
+		# Two parents => merge. Skip; the merged sides were already checked.
+		if git rev-parse --verify "${_c}^2" >/dev/null 2>&1; then
+			prev_had_test=0
+			continue
+		fi
 		_files=$(git diff-tree --no-commit-id --name-only -r "$_c")
 		_class=$(printf '%s\n' "$_files" | classify_list)
 		_prod=${_class% *}
