@@ -78,7 +78,27 @@ relay_require_jq() {
 	fi
 }
 
+relay_ci_claimed() {
+	[ "${CI:-}" = true ] || [ "${GITHUB_ACTIONS:-}" = true ]
+}
+
+relay_running_in_ci() {
+	# Fail-closed denylist and live GitHub reads when CI claims to be running,
+	# or when a caller sets RELAY_CHECK_MODE=ci.
+	relay_ci_claimed || [ "${RELAY_CHECK_MODE:-}" = ci ]
+}
+
 relay_check_mode() {
+	# Test fixtures (RELAY_LABELS* / RELAY_REVIEWS*) are ignored when CI=true
+	# unless the caller explicitly sets RELAY_CHECK_MODE=eval.
+	if relay_ci_claimed; then
+		if [ "${RELAY_CHECK_MODE:-}" = eval ]; then
+			printf '%s' eval
+			return
+		fi
+		printf '%s' "${RELAY_CHECK_MODE:-ci}"
+		return
+	fi
 	if [ -n "${RELAY_CHECK_MODE:-}" ]; then
 		printf '%s' "$RELAY_CHECK_MODE"
 		return
@@ -88,9 +108,9 @@ relay_check_mode() {
 		printf '%s' eval
 		return
 	fi
-	if [ "${GITHUB_ACTIONS:-}" = true ]; then
-		printf '%s' ci
-		return
-	fi
 	printf '%s' hook
+}
+
+relay_allow_eval_overrides() {
+	[ "$(relay_check_mode)" = eval ]
 }
