@@ -17,12 +17,13 @@ while [ "$#" -gt 0 ]; do
 	--staged) scope=staged; shift ;;
 	--range)
 		scope=range
-		if [ "$#" -lt 3 ]; then
-			relay_die "run-local --range needs a base and a head revision"
+		shift
+		# Optional base and head; when omitted, merge-base against origin/main.
+		if [ "$#" -ge 2 ]; then
+			base=$1
+			head=$2
+			shift 2
 		fi
-		base=$2
-		head=$3
-		shift 3
 		;;
 	*) relay_die "unknown argument: $1" ;;
 	esac

@@ -67,4 +67,15 @@ else
 	bad AC-HK-09 'companion test commit should pass pre-commit'
 fi
 
+# pre-push calls --range with no SHAs; the script must resolve origin/main itself.
+set +e
+range_out=$(RELAY_SKIP_SCRIPT_TESTS=1 "$CHECKS/run-local.sh" --range 2>&1)
+range_code=$?
+set -e
+if [ "$range_code" -eq 0 ]; then
+	ok AC-HK-10
+else
+	bad AC-HK-10 "run-local --range without SHAs failed: $range_out"
+fi
+
 finish
