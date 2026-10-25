@@ -5,6 +5,13 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(CDPATH= cd -- "$(dirname "$0")" && pwd)/helpers.sh"
 dl="$CHECKS/denylist.sh"
+# Header must name a role, not a person.
+if grep -E 'Jose|Fernando|Rafael' "$dl" >/dev/null; then
+	bad AC-DL-00 'denylist.sh names a person; use a role'
+else
+	ok AC-DL-00
+fi
+
 marker='FIXTURE_DENY_MARKER_92f3ac'
 safe='DENYLIST_NOHIT_TOKEN_7c1e'
 local_env=(env -u RELAY_DENYLIST -u CI -u GITHUB_ACTIONS RELAY_CHECK_MODE=hook)

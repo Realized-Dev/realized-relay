@@ -2,7 +2,7 @@
 # Scan files for patterns supplied ONLY via RELAY_DENYLIST.
 # The secret is never written to the repository.
 # Local: missing or empty secret passes with a notice.
-# CI: missing or empty secret fails (Jose must set the Actions secret).
+# CI: missing or empty secret fails (the repository owner must set the Actions secret).
 
 set -eu
 
