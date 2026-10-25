@@ -33,20 +33,27 @@ which hides a duplicated resolve-head block on `main`.
   `tdd-order --staged` exits non-zero. Incoming tests from
   `origin/main` that are missing from the index do not count as a
   companion test change.
-- **AC-CI-06b:** The jscpd step in the PR-controlled `ci` workflow
-  does not ignore `.github/workflows/guards.yml`.
-- **AC-CI-07-label-guard / AC-CI-07-approver / AC-CI-23:** Status
-  contexts stay `guards / denylist`, `guards / label-guard`, and
-  `guards / approver`. Existing AC-CI checks for `pull_request_target`,
-  base-branch scripts, and PR-head-as-data remain green.
+- **AC-TD-23:** The same faked-merge case still fails when the staged
+  production pathname would be quoted by `git diff --name-only`
+  (for example a double quote in the path).
+- **AC-CI-06b:** When the PR-controlled duplication check runs and the
+  trusted guard workflow contains duplicate content, the check reports
+  it. The check does not have to report a clone when no duplicate
+  content exists.
+- **AC-CI-07-label-guard:** Status context `guards / label-guard` stays.
+- **AC-CI-07-approver:** Status context `guards / approver` stays.
+- **AC-CI-23:** Status context `guards / denylist` stays on the PR head.
 
 ## Traceability
 
 | Criterion | Test name or tag | Status |
 |---|---|---|
 | AC-TD-22 | AC-TD-22 in `tests/tdd-order.test.sh` | green |
+| AC-TD-23 | AC-TD-23 in `tests/tdd-order.test.sh` | green |
 | AC-CI-06b | AC-CI-06b in `tests/workflow.test.sh` | green |
-| AC-CI-07-* / AC-CI-23 | `tests/guards-workflow.test.sh` | exists |
+| AC-CI-07-label-guard | `AC-CI-07-label-guard` in `tests/guards-workflow.test.sh` | exists |
+| AC-CI-07-approver | `AC-CI-07-approver` in `tests/guards-workflow.test.sh` | exists |
+| AC-CI-23 | `AC-CI-23` in `tests/guards-workflow.test.sh` | exists |
 
 ## Open questions
 

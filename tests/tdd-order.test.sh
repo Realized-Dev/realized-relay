@@ -467,4 +467,32 @@ else
 	bad AC-TD-22 "faked MERGE_HEAD=origin/main with staged prod must fail: $out15"
 fi
 
+# Quoted Git pathname must still count as staged production (AC-TD-23).
+tmp16=$(mktemp -d)
+trap 'rm -rf "$tmp" "$tmp2" "$tmp3" "$tmp4" "$tmp5" "$tmp6" "$tmp7" "$tmp8" "$tmp9" "$tmp10" "$tmp11" "$tmp12" "$tmp13" "$tmp14" "$tmp15" "$tmp16"' EXIT
+init_tdd "$tmp16"
+printf 'base\n' >"$tmp16/README.md"
+git -C "$tmp16" add README.md
+git -C "$tmp16" commit -q -m base
+old16=$(git -C "$tmp16" rev-parse HEAD)
+mkdir -p "$tmp16/tests" "$tmp16/app"
+printf 'main-test\n' >"$tmp16/tests/m.test.sh"
+git -C "$tmp16" add tests/m.test.sh
+git -C "$tmp16" commit -q -m 'main test'
+main16=$(git -C "$tmp16" rev-parse HEAD)
+git -C "$tmp16" update-ref refs/remotes/origin/main "$main16"
+git -C "$tmp16" checkout -q -b feature "$old16"
+printf 'prod\n' >"$tmp16/app/foo\"bar.sh"
+git -C "$tmp16" add "app/foo\"bar.sh"
+git -C "$tmp16" rev-parse origin/main >"$tmp16/.git/MERGE_HEAD"
+set +e
+out16=$(cd "$tmp16" && env RELAY_TDD_BASE=origin/main "$td" --staged 2>&1)
+code16=$?
+set -e
+if [ "$code16" -eq 1 ]; then
+	ok AC-TD-23
+else
+	bad AC-TD-23 "quoted staged prod path must still fail companion: $out16"
+fi
+
 finish

@@ -175,6 +175,7 @@ merge_own_edit_files() {
 }
 
 # Paths present in the index. Deletions and missing paths do not count.
+# Input is unquoted pathnames (NUL-to-newline from git -z output).
 _index_present_paths() {
 	while IFS= read -r _p || [ -n "${_p:-}" ]; do
 		[ -z "$_p" ] && continue
@@ -184,6 +185,12 @@ _index_present_paths() {
 	done
 }
 
+# -z so Git does not quote unusual pathnames; tr keeps classify_list's
+# newline reader. Paths that contain a newline stay out of scope.
+_unquoted_names() {
+	tr '\0' '\n'
+}
+
 # Staged files the in-progress merge changed itself, not incoming parent files.
 # Ignore deletions and paths missing from the index so a faked MERGE_HEAD
 # cannot hide staged production behind incoming tests.
@@ -191,13 +198,13 @@ staged_own_edit_files() {
 	_auto=$(git merge-tree --write-tree HEAD MERGE_HEAD 2>/dev/null) || _auto=
 	_idx=$(git write-tree)
 	if [ -n "$_auto" ]; then
-		git diff-tree --diff-filter=d --no-commit-id --name-only -r "$_auto" "$_idx" | _index_present_paths
+		git diff-tree --diff-filter=d --no-commit-id --name-only -z -r "$_auto" "$_idx" | _unquoted_names | _index_present_paths
 		return 0
 	fi
 	_a=$(mktemp)
 	_b=$(mktemp)
-	git diff --cached --diff-filter=d --name-only HEAD | sort >"$_a"
-	git diff --cached --diff-filter=d --name-only MERGE_HEAD | sort >"$_b"
+	git diff --cached --diff-filter=d --name-only -z HEAD | _unquoted_names | sort >"$_a"
+	git diff --cached --diff-filter=d --name-only -z MERGE_HEAD | _unquoted_names | sort >"$_b"
 	comm -12 "$_a" "$_b" | _index_present_paths
 	rm -f "$_a" "$_b"
 }
