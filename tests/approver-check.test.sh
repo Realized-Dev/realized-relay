@@ -101,4 +101,10 @@ expect_exit AC-AP-23 1 env CI=true RELAY_CHECK_MODE=ci RELAY_LABELS=security \
 expect_exit AC-AP-24 1 env CI=true RELAY_CHECK_MODE=eval RELAY_LABELS=security \
 	RELAY_HEAD_SHA="$HEAD40" RELAY_REVIEWS="$(approved_on "$HEAD40")" "$ap"
 
+# Read-only approvals do not satisfy the gate; write does.
+expect_exit AC-AP-26 1 run_eval RELAY_LABELS=security RELAY_HEAD_SHA="$HEAD40" \
+	RELAY_REVIEWS="$(approved_on "$HEAD40")" RELAY_REVIEWER_PERMS='alice=read' "$ap"
+expect_exit AC-AP-27 0 run_eval RELAY_LABELS=security RELAY_HEAD_SHA="$HEAD40" \
+	RELAY_REVIEWS="$(approved_on "$HEAD40")" RELAY_REVIEWER_PERMS='alice=write' "$ap"
+
 finish

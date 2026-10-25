@@ -8,9 +8,14 @@ lg="$CHECKS/label-guard.sh"
 expect_exit AC-LG-01 1 run_eval RELAY_LABELS_JSON='' "$lg"
 expect_exit AC-LG-02 1 run_eval RELAY_LABELS_JSON='not-json' "$lg"
 expect_exit AC-LG-03 1 run_eval RELAY_LABELS_JSON='{"title":"no labels key"}' "$lg"
-expect_exit AC-LG-04 1 env -u RELAY_LABELS -u RELAY_LABELS_JSON RELAY_CHECK_MODE=ci "$lg"
-expect_exit AC-LG-05 1 env -u RELAY_LABELS -u RELAY_LABELS_JSON RELAY_CHECK_MODE=ci \
+expect_exit AC-LG-04 1 env -u RELAY_LABELS -u RELAY_LABELS_JSON \
+	-u GITHUB_REPOSITORY -u GH_REPO -u PR_NUMBER -u RELAY_PR_NUMBER \
+	-u GITHUB_TOKEN -u GH_TOKEN RELAY_CHECK_MODE=ci "$lg"
+expect_contains AC-LG-04b 'missing GITHUB_REPOSITORY'
+expect_exit AC-LG-05 1 env -u RELAY_LABELS -u RELAY_LABELS_JSON \
+	-u GITHUB_TOKEN -u GH_TOKEN RELAY_CHECK_MODE=ci \
 	GITHUB_REPOSITORY=acme/relay PR_NUMBER=9 "$lg"
+expect_contains AC-LG-05b 'missing GitHub token'
 expect_exit AC-LG-06 0 run_eval RELAY_LABELS_JSON='{"labels":[]}' "$lg"
 expect_contains AC-LG-07 'gated: no'
 

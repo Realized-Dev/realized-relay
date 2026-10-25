@@ -55,7 +55,7 @@ fi
 
 "$here/line-budget.sh"
 "$here/rules-frontmatter.sh"
-# The dedicated CI denylist job fail-closes on a missing secret.
+# The dedicated guards workflow denylist job fail-closes on a missing secret.
 # Local hooks still run the scan (notice-pass when the secret is unset).
 if [ "${GITHUB_ACTIONS:-}" = true ]; then
 	relay_notice "denylist deferred to the CI denylist job"

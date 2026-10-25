@@ -49,7 +49,7 @@ mkdir -p "$tmp/app"
 printf 'prod\n' >"$tmp/app/x.sh"
 git -C "$tmp" add app/x.sh
 set +e
-git -C "$tmp" commit -q -m 'prod only' >/tmp/hook-commit.out 2>&1
+git -C "$tmp" commit -q -m 'prod only' >"$tmp/hook-commit.out" 2>&1
 code=$?
 set -e
 if [ "$code" -ne 0 ]; then

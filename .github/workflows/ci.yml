@@ -71,18 +71,6 @@ jobs:
           persist-credentials: false
       - run: ./checks/rules-frontmatter.sh
 
-  denylist:
-    name: denylist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Scan using the CI secret only
-        env:
-          RELAY_DENYLIST: ${{ secrets.RELAY_DENYLIST }}
-        run: ./checks/denylist.sh
-
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
@@ -119,37 +107,3 @@ jobs:
           --threshold 0
           --ignore "**/node_modules/**,**/.git/**,**/report/**,**/jscpd-report/**"
           .
-
-  label-guard:
-    name: label-guard
-    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Read labels (fail closed)
-        env:
-          RELAY_CHECK_MODE: ci
-          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: ./checks/label-guard.sh
-
-  approver:
-    name: approver
-    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Require approval on the current head SHA when gated
-        env:
-          RELAY_CHECK_MODE: ci
-          RELAY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: ./checks/approver-check.sh

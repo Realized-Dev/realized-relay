@@ -35,15 +35,22 @@ for _f in "$root"/*; do
 	checked=$((checked + 1))
 	_base=$(basename "$_f")
 
-	_first=$(sed -n '1p' "$_f")
+	_first=$(sed -n '1p' "$_f" | tr -d '\r')
 	if [ "$_first" != --- ]; then
 		relay_err "rules-frontmatter: ${_base} has no YAML frontmatter"
 		fail=1
 		continue
 	fi
 
-	# Text between the opening --- and the next --- (or EOF).
+	if ! awk '{ sub(/\r$/, "") } NR > 1 && $0 == "---" { found = 1; exit } END { exit !found }' "$_f"; then
+		relay_err "rules-frontmatter: ${_base} frontmatter has no closing ---"
+		fail=1
+		continue
+	fi
+
+	# Text between the opening --- and the next ---.
 	_fm=$(awk '
+		{ sub(/\r$/, "") }
 		NR == 1 && $0 == "---" { next }
 		$0 == "---" { exit }
 		{ print }

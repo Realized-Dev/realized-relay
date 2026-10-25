@@ -66,7 +66,9 @@ collect_reviews_tsv() {
 		fi
 		[ -n "$_repo" ] || relay_die "missing GITHUB_REPOSITORY (fail closed)"
 		[ -n "$_pr" ] || relay_die "missing pull request number (fail closed)"
-		relay_token_present || relay_die "missing GitHub token (fail closed)"
+		if [ "$mode" != hook ]; then
+			relay_token_present || relay_die "missing GitHub token (fail closed)"
+		fi
 		relay_have_cmd gh || relay_die "gh is required to read reviews (fail closed)"
 		# Paginate, then slurp into one array. Empty page stream becomes [].
 		if ! _stream=$(gh api --paginate "repos/${_repo}/pulls/${_pr}/reviews" --jq '.[]'); then
@@ -92,6 +94,45 @@ collect_reviews_tsv() {
 }
 
 tsv=$(collect_reviews_tsv) || exit 1
+
+# Only write / maintain / admin reviews count (not author_association).
+reviewer_permission_ok() {
+	_login=$1
+	[ -n "$_login" ] || return 1
+	if relay_allow_eval_overrides; then
+		if [ -n "${RELAY_REVIEWER_PERMS+x}" ]; then
+			_p=$(printf '%s\n' "$RELAY_REVIEWER_PERMS" | awk -F= -v u="$_login" '
+				$1 == u { print $2; exit }
+			')
+			case "$_p" in
+			write|maintain|admin) return 0 ;;
+			esac
+			return 1
+		fi
+		return 0
+	fi
+	_repo=$(relay_repo)
+	[ -n "$_repo" ] || return 1
+	relay_have_cmd gh || return 1
+	_p=$(gh api "repos/${_repo}/collaborators/${_login}/permission" --jq '.permission' 2>/dev/null || true)
+	case "$_p" in
+	write|maintain|admin) return 0 ;;
+	esac
+	return 1
+}
+
+_filtered=
+while IFS= read -r _rev || [ -n "${_rev:-}" ]; do
+	[ -z "$_rev" ] && continue
+	_who=$(printf '%s' "$_rev" | awk -F '	' '{ print $2 }')
+	if reviewer_permission_ok "$_who"; then
+		_filtered="${_filtered}${_rev}
+"
+	fi
+done <<EOF
+$tsv
+EOF
+tsv=$_filtered
 
 # Latest APPROVED / CHANGES_REQUESTED decision per user (COMMENTED ignored).
 # Highest numeric id wins. A CR on an older SHA stays outstanding until

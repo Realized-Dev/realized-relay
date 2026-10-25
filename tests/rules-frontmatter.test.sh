@@ -79,5 +79,14 @@ trigger: glob
 EOR
 expect_exit AC-RF-13 1 env RELAY_RULES_DIR="$tree" "$rf"
 expect_contains AC-RF-14 'no glob/globs key'
+rm -f "$tree/glob-only.md"
+
+printf -- '---\r\ntrigger: always_on\r\n---\r\nbody\r\n' >"$tree/crlf.md"
+expect_exit AC-RF-15 0 env RELAY_RULES_DIR="$tree" "$rf"
+rm -f "$tree/crlf.md"
+
+printf -- '---\ntrigger: always_on\nbody with no closing delimiter\n' >"$tree/open.md"
+expect_exit AC-RF-16 1 env RELAY_RULES_DIR="$tree" "$rf"
+expect_contains AC-RF-17 'no closing ---'
 
 finish

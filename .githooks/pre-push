@@ -11,12 +11,13 @@ if [ "${RELAY_SKIP_PR_GUARDS:-}" = 1 ]; then
 	exit 0
 fi
 
-# Label guard and approver are fail-closed when a pull request exists.
+# Label guard is fail-closed when a pull request exists.
 # No pull request yet: label-guard notices and skips (CI still enforces).
+# Approval is enforced by the trusted guards workflow, not this hook:
+# a new commit cannot already have an APPROVED review on its SHA.
 export RELAY_CHECK_MODE="${RELAY_CHECK_MODE:-hook}"
 if [ -z "${RELAY_HEAD_SHA:-}" ]; then
 	RELAY_HEAD_SHA=$(git rev-parse HEAD)
 	export RELAY_HEAD_SHA
 fi
 "$checks/label-guard.sh"
-"$checks/approver-check.sh"

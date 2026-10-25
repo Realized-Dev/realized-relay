@@ -5,23 +5,17 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(CDPATH= cd -- "$(dirname "$0")" && pwd)/helpers.sh"
 dl="$CHECKS/denylist.sh"
-# Comments must name a role, not a person. A personal name is any
-# Title-case word that is not a known sentence opener or product word.
-# Do not list given names here; the shape of the token is the check.
-_dl_title_allow='Scan|The|Local|Discard|Actions'
-_dl_named=$(
-	{
-		grep -E '^[[:space:]]*#' "$dl" \
-			| grep -oE '\b[A-Z][a-z]{2,}\b' \
-			| grep -Ev "^(${_dl_title_allow})$" \
-			| sort -u
-	} || true
-)
-if [ -n "$_dl_named" ]; then
-	bad AC-DL-00 "denylist.sh comments name a person (use a role): ${_dl_named}"
-else
-	ok AC-DL-00
-fi
+# AC-DL-00: run the script against fixtures. The names list is test-only
+# and comes from the environment (RELAY_TEST_NAMES, else a disposable token).
+# Never lint comments for Title-case English.
+_dl00_names=${RELAY_TEST_NAMES:-ACDL00_ENV_NAME_TOKEN}
+_dl00=$(mktemp -d)
+printf 'visible %s in a fixture file\n' "$_dl00_names" >"$_dl00/person.txt"
+printf 'clean text\n' >"$_dl00/ok.txt"
+expect_exit AC-DL-00 1 env RELAY_DENYLIST="$_dl00_names" RELAY_SCAN_ROOT="$_dl00" "$dl"
+expect_contains AC-DL-00-path 'match in person.txt'
+expect_omits AC-DL-00-secret "$_dl00_names"
+rm -rf "$_dl00"
 
 marker='FIXTURE_DENY_MARKER_92f3ac'
 safe='DENYLIST_NOHIT_TOKEN_7c1e'
@@ -83,5 +77,17 @@ printf 'clean text\n' >"$tree/sample.txt"
 printf 'xx\0%s\n' "$marker" >"$tree/blob.bin"
 expect_exit AC-DL-15 1 env RELAY_DENYLIST="$marker" RELAY_SCAN_ROOT="$tree" "$dl"
 expect_contains AC-DL-15-path 'match in blob.bin'
+
+# Tracked-but-deleted paths must not become grep exit 2.
+wt=$(mktemp -d)
+git -C "$wt" init -q
+git -C "$wt" config user.email deny@example.test
+git -C "$wt" config user.name Deny Test
+printf 'only-in-deleted-file\n' >"$wt/gone.txt"
+git -C "$wt" add gone.txt
+git -C "$wt" commit -q -m gone
+rm -f "$wt/gone.txt"
+expect_exit AC-DL-17 0 env RELAY_DENYLIST='only-in-deleted-file' RELAY_SCAN_ROOT="$wt" "$dl"
+rm -rf "$wt"
 
 finish

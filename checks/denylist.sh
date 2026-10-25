@@ -46,7 +46,7 @@ if [ "$pattern_count" -eq 0 ]; then
 fi
 
 if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-	git -C "$root" ls-files >"$tmpdir/files"
+	git -C "$root" -c core.quotePath=false ls-files >"$tmpdir/files"
 else
 	(CDPATH= cd -- "$root" && find . -type f ! -path './.git/*' | sed 's|^\./||') >"$tmpdir/files"
 fi
@@ -56,6 +56,8 @@ while IFS= read -r _pat; do
 	[ -z "$_pat" ] && continue
 	while IFS= read -r _rel; do
 		[ -z "$_rel" ] && continue
+		# Deleted files, submodules and dangling symlinks have no content.
+		[ -f "$root/$_rel" ] || continue
 		# -a: scan binary files too so -I cannot hide a match (B1).
 		# Discard grep stderr: it can echo the pattern on a bad regex.
 		set +e
