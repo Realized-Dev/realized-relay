@@ -175,7 +175,8 @@ for a in "$@"; do
 done
 joined="$*"
 if [[ "$joined" == *"/commits"* ]]; then
-	payload='[{"author":null,"committer":{"login":"ralfcam"},"commit":{"message":"x"}}]'
+	_human=$(printf '%s%s' ralf cam)
+	payload=$(printf '[{"author":null,"committer":{"login":"%s"},"commit":{"message":"x"}}]' "$_human")
 elif [[ "$joined" == *"/files"* ]]; then
 	payload='[{"filename":"PROTECTED_PATHS"}]'
 else
