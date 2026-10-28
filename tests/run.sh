@@ -7,7 +7,7 @@ cd "$ROOT" || exit 1
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
 fail=0
 found=0
-for t in tests/*.test.sh; do
+for t in tests/*.test.sh tests/guards/*.test.sh; do
 	[ -f "$t" ] || continue
 	found=1
 	echo "==> $t"

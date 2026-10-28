@@ -1,0 +1,48 @@
+@agents: ai\-realized
+@humans: ralf\cam
+# meta
+PROTECTED_PATHS
+# CI workflows
+.github/**
+# hooks
+.githooks/**
+# guardrails
+checks/**
+.agents/rules/**
+.cursor/rules/**
+AGENTS.md
+CLAUDE.md
+.coderabbit.yaml
+docs/guard-workflow.md
+# guard self-tests only (rev 2: product tests stay agent-editable for SDD-to-TDD)
+tests/guards/**
+tests/helpers.sh
+tests/run.sh
+tests/approver-check.test.sh
+tests/denylist.test.sh
+tests/guards-workflow.test.sh
+tests/head-status.test.sh
+tests/hooks.test.sh
+tests/label-guard.test.sh
+tests/line-budget.test.sh
+tests/rules-frontmatter.test.sh
+tests/tdd-order.test.sh
+tests/workflow.test.sh
+tests/protected-paths*
+# acceptance criteria
+docs/specs/**
+docs/spec-template.md
+# evals and fixtures (RESERVED)
+evals/**
+fixtures/**
+# QA rubrics and verdicts (RESERVED)
+qa/**
+# licence / provenance (LICENSE*, NOTICE* RESERVED)
+LICENSE*
+NOTICE*
+PROVENANCE.md
+docs/provenance-log.md
+# compliance records (RESERVED)
+claims-rules.json
+**/claims-rules.json
+**/passes.jsonl

@@ -65,8 +65,13 @@ If the change is labelled, or is about, any of `sensitive`, `migration`, `approv
 
 Gated pull requests need an APPROVED review on the current head SHA from a GitHub user who is not the pull request's author. GitHub rejects author self-approval (HTTP 422). Stay draft until that review lands.
 
+## QA rubrics
+
+Agents must not read or edit QA rubrics or verdicts (`qa/**`). These are reserved for human QA engineers.
+
 ## Do not
 
+- Read or edit `qa/**` (QA rubrics and verdicts).
 - Copy, port, or read code from other repositories. Write from the spec and public docs.
 - Put credentials, tokens, private keys, or personal or client identifiers in the tree or in output.
 - Restate this file inside a pointer layer.
