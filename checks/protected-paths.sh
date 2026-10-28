@@ -227,10 +227,16 @@ if [ -n "${pr_commits_count:-}" ]; then
 	fi
 fi
 
+# Directives may escape identifiers with '\' so contiguous denylist
+# tokens never appear in PROTECTED_PATHS (same idea as _pp_* helpers).
+_pp_decode_ids() { printf '%s' "$1" | sed 's/\\//g'; }
+
 agents_list=$(grep -i '^@agents:' "$paths_file" | head -n1 | sed 's/^@agents:[[:space:]]*//i' | tr ',' ' ' || true)
+agents_list=$(_pp_decode_ids "$agents_list")
 [ -z "$agents_list" ] && agents_list="$(_pp_agent)"
 
 humans_list=$(grep -i '^@humans:' "$paths_file" | head -n1 | sed 's/^@humans:[[:space:]]*//i' | tr ',' ' ' || true)
+humans_list=$(_pp_decode_ids "$humans_list")
 [ -z "$humans_list" ] && humans_list="$(_pp_human)"
 
 # Positive membership requires a non-empty humans allowlist.

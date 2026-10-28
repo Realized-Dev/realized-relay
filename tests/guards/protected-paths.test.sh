@@ -146,4 +146,14 @@ expect_exit F24 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RE
 expect_contains F24-msg 'incomplete commits pagination'
 
 
+# P8: PROTECTED_PATHS keeps named humans/agents without contiguous denylist tokens
+expect_exit P8 1 bash -c "grep -Fqe \"$AGENT\" \"$ROOT/PROTECTED_PATHS\""
+expect_exit P8b 1 bash -c "grep -Fqe \"$HUMAN\" \"$ROOT/PROTECTED_PATHS\""
+expect_contains P8c '@agents:' "$(head -n1 "$ROOT/PROTECTED_PATHS")"
+expect_contains P8d '@humans:' "$(sed -n '2p' "$ROOT/PROTECTED_PATHS")"
+# Membership still resolves (human with citation passes against real file)
+expect_exit P8e 0 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="PROTECTED_PATHS" RELAY_PP_BODY="$body_pass" "$pp"
+expect_contains P8e-msg 'PASS'
+
+
 finish
