@@ -9,10 +9,10 @@ set -euo pipefail
 [ -f "$ROOT/.githooks/INSTALL" ] && ok AC-HK-03 || bad AC-HK-03 'INSTALL note missing'
 
 if grep -q 'core.hooksPath .githooks' "$ROOT/.githooks/INSTALL" \
-	&& grep -q 'N2' "$ROOT/.githooks/INSTALL"; then
+	&& ! grep -q 'N2' "$ROOT/.githooks/INSTALL"; then
 	ok AC-HK-04
 else
-	bad AC-HK-04 'INSTALL does not mention core.hooksPath and N2'
+	bad AC-HK-04 'INSTALL must mention core.hooksPath and must not contain N2'
 fi
 
 if grep -q 'run-local.sh' "$ROOT/.githooks/pre-commit" && grep -q -- '--staged' "$ROOT/.githooks/pre-commit"; then
