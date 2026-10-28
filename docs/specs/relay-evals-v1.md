@@ -103,7 +103,7 @@ Mix target: at least three easy/medium tasks Flash is expected to pass often (st
 
 ## Acceptance criteria for the runner (runner owner)
 
-1. Wrapper launches Antigravity CLI through `agy` in a **new process** whose environment exposes only `GEMINI_API_KEY` from the parent env for model auth (plus the minimal non-secret process defaults the CLI needs). No key files in the repo; no printing of secrets.
+1. Wrapper launches Antigravity CLI through `agy` in a **new process** whose environment is built from an explicit allowlist only: `GEMINI_API_KEY` from the parent for model auth, plus only the non-secret process defaults the runner owner lists by name in that allowlist. Clear every other inherited variable before launch. A runner test must assert the child environment contains only allowlisted names and excludes inherited credentials. No key files in the repo; no printing of secrets.
 2. Model id, temperature and seed are pinned in the batch manifest and are byte-identical for the before and after sides of a comparison.
 3. Spend: enforce the EUR 13/day cap and the EUR 28.80 monthly hard stop; stop starting new runs when either would be breached. Log the first batch's real cost before any weekly cadence is committed.
 4. Layout: tasks live under `evals/` in Realized-Relay; each task has a stable id, brief, pass criterion and difficulty tag matching this spec's stubs (or a later spec-owner revision).
@@ -144,5 +144,5 @@ Next: runner owner smoke-tests the pinned Flash path and logs batch-1 cost; spec
 
 - Model: `gemini-3.8-flash-medium` via agy, pinned identically before and after. Temperature fixed per run. Runs record seed_pinned; while the CLI can't pin a seed, unpinned runs are scored and the paired baseline batches measure run-to-run noise. Pinning via generationConfig is a later change.
 - Grader log: `/workspace/qa/evals-log/` for dry runs; one line per run (task id, seed, run index, pass/fail, note of up to 120 characters). Before and after batches must write to separate, uniquely identified log files, or each line must include a batch/side identifier, so paired cells stay attributable when task id, seed and run index repeat. Its home in the repo stays open for v1.
-- Task schema: `evals/tasks/<NN-slug>/` with `task.yaml` (id, title, difficulty, timeout, needs_sandbox), `prompt.md` (the only text the agent sees), `fixtures/` (fixed fake values only) and `check.sh` (deterministic: exit 0 means pass; no LLM judge; hidden from fix agents by the guard).
+- Task schema: `evals/tasks/<NN-slug>/` with `task.yaml` (id, title, difficulty, timeout, needs_sandbox), `prompt.md` (the only text the agent sees), `fixtures/` (fixed fake values only) and `check.sh` (deterministic: exit 0 means pass; no LLM judge; the protected-paths check blocks edits to it, while reads stay open until the separate read guard is live).
 - First baseline: 7 runnable tasks (stubs 3, 7 and 8 wait for the sandbox repo) × 5 runs × 2 batches = 70 runs.
