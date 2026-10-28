@@ -13,4 +13,4 @@ A tiny dry-run sample for REAZED-447 to demonstrate the SDD-to-TDD workflow.
 - [x] Write tests for AC-1, AC-2
 - [x] Tests pass (Green)
 
-<!-- live bump 2 2026-10-28 14:05:58 CET -->
+<!-- live bump 3 2026-10-28 14:52:17 CET tree-stale proof -->
