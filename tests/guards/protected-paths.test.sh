@@ -45,7 +45,7 @@ expect_exit F1a 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$AGENT" RE
 expect_contains F1a-msg 'FAIL'
 # F1b: agent bot touching checks/approver-check.sh
 expect_exit F1b 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$AGENT_BOT" RELAY_PP_FILES="checks/approver-check.sh" "$pp"
-expect_contains F1b-msg "protected-paths: FAIL. ${AGENT} PR touches protected path(s): checks/approver-check.sh (rule checks/**, line 8)"
+expect_contains F1b-msg "protected-paths: FAIL. ${AGENT} PR touches protected path(s): checks/approver-check.sh (rule checks/**, line 10)"
 expect_contains F1b-msg2 "authored by ${HUMAN}"
 
 # F2: agent PR edits PROTECTED_PATHS
@@ -96,7 +96,7 @@ expect_exit F13 1 run_eval env RELAY_PP_PATHS_FILE="$tmp" "$pp"
 expect_contains F13-msg 'ERROR'
 rm -f "$tmp"
 
-# F14: API error or truncation
+# F14: eval-mode injected API error sentinel
 expect_exit F14 1 run_eval env RELAY_PP_FILES="__ERROR__" "$pp"
 expect_contains F14-msg 'ERROR'
 
@@ -109,5 +109,41 @@ expect_exit F16 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$AGENT" RE
 # F17: human PR touching protected path with no citation
 expect_exit F17 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="checks/approver-check.sh" RELAY_PP_BODY="some text" "$pp"
 expect_contains F17-msg "protected-paths: FAIL. protected path(s) touched but PR body missing '${CITE} pass @<headsha>'; see PROTECTED_PATHS."
+
+# F18: unknown login fail-closed as agent on protected path
+expect_exit F18 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="contractor-x" RELAY_PP_SENDER="contractor-x" RELAY_PP_COMMITS=$'contractor-x\tcontractor-x' RELAY_PP_FILES="checks/approver-check.sh" "$pp"
+expect_contains F18-msg 'FAIL'
+
+# F19: Co-authored-by trailer naming the agent fails
+_co_msg=$(printf 'feat: x\\n\\nCo-authored-by: %s <a@b.c>' "$AGENT")
+expect_exit F19 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_SENDER="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN	${_co_msg}" RELAY_PP_FILES="checks/approver-check.sh" RELAY_PP_BODY="$body_pass" "$pp"
+expect_contains F19-msg 'FAIL'
+
+# P7: web-flow committer allowed when author is the listed human
+expect_exit P7 0 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	web-flow" RELAY_PP_FILES="checks/approver-check.sh" RELAY_PP_BODY="$body_pass" "$pp"
+expect_contains P7-msg 'PASS'
+
+# F20: web-flow committer rejected when author is not the listed human
+expect_exit F20 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="someone-else" RELAY_PP_SENDER="someone-else" RELAY_PP_COMMITS=$'someone-else\tweb-flow' RELAY_PP_FILES="checks/approver-check.sh" RELAY_PP_BODY="$body_pass" "$pp"
+expect_contains F20-msg 'FAIL'
+
+# F21: changed_files hits 3000 API limit
+expect_exit F21 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="docs/x.md" RELAY_PP_PR_CHANGED_FILES=3000 "$pp"
+expect_contains F21-msg 'ERROR'
+expect_contains F21-msg2 '3000'
+
+# F22: commits hits 250 API limit
+expect_exit F22 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="docs/x.md" RELAY_PP_PR_COMMITS_COUNT=250 "$pp"
+expect_contains F22-msg 'ERROR'
+expect_contains F22-msg2 '250'
+
+# F23: incomplete files pagination fails closed
+expect_exit F23 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="docs/x.md" RELAY_PP_PR_CHANGED_FILES=2 "$pp"
+expect_contains F23-msg 'incomplete files pagination'
+
+# F24: incomplete commits pagination fails closed
+expect_exit F24 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="docs/x.md" RELAY_PP_PR_COMMITS_COUNT=2 "$pp"
+expect_contains F24-msg 'incomplete commits pagination'
+
 
 finish
