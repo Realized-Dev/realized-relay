@@ -64,8 +64,8 @@ expect_exit F5 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$AGENT" REL
 expect_exit F6 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN
 $AGENT	$HUMAN" RELAY_PP_FILES="PROTECTED_PATHS" "$pp"
 
-# F7: commit with no linked GitHub login
-expect_exit F7 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS=$'\t'"$HUMAN" RELAY_PP_FILES="PROTECTED_PATHS" "$pp"
+# F7: commit with no linked GitHub login (eval fixture uses "-" sentinel)
+expect_exit F7 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="-"$'\t'"$HUMAN" RELAY_PP_FILES="PROTECTED_PATHS" "$pp"
 
 # F8: ** nested match
 expect_exit F8 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$AGENT" RELAY_PP_FILES=".cursor/rules/nested/file.md" "$pp"
@@ -155,5 +155,48 @@ expect_contains P8d '@humans:' "$(sed -n '2p' "$ROOT/PROTECTED_PATHS")"
 expect_exit P8e 0 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_COMMITS="$HUMAN	$HUMAN" RELAY_PP_FILES="PROTECTED_PATHS" RELAY_PP_BODY="$body_pass" "$pp"
 expect_contains P8e-msg 'PASS'
 
+
+# F25: null-author sentinel + human committer + valid citation must FAIL (bypass class)
+expect_exit F25 1 run_eval env RELAY_HEAD_SHA="$sha" RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_SENDER="$HUMAN" RELAY_PP_COMMITS="-"$'\t'"$HUMAN"$'\t'"msg" RELAY_PP_FILES="PROTECTED_PATHS" RELAY_PP_BODY="$body_pass" "$pp"
+expect_contains F25-msg 'FAIL'
+
+# F26: CI-mode gh-stub — null author, human committer, valid citation → FAIL
+# Stub applies the script's --jq filter so the sentinel emit path is exercised.
+_f26_fake=$(mktemp -d)
+cat >"$_f26_fake/gh" <<'GHEOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"${FAKE_GH_LOG:?}"
+jq_expr=""
+prev=""
+for a in "$@"; do
+	if [ "$prev" = "--jq" ]; then jq_expr="$a"; fi
+	prev="$a"
+done
+joined="$*"
+if [[ "$joined" == *"/commits"* ]]; then
+	payload='[{"author":null,"committer":{"login":"ralfcam"},"commit":{"message":"x"}}]'
+elif [[ "$joined" == *"/files"* ]]; then
+	payload='[{"filename":"PROTECTED_PATHS"}]'
+else
+	payload='{"changed_files":1,"commits":1}'
+fi
+if [ -n "$jq_expr" ]; then
+	printf '%s' "$payload" | jq -r "$jq_expr"
+else
+	printf '%s' "$payload"
+fi
+GHEOF
+chmod +x "$_f26_fake/gh"
+_f26_log="$_f26_fake/log"
+: >"$_f26_log"
+expect_exit F26 1 env PATH="$_f26_fake:$PATH" FAKE_GH_LOG="$_f26_log" \
+	RELAY_CHECK_MODE=ci \
+	GITHUB_REPOSITORY=acme/relay PR_NUMBER=13 RELAY_HEAD_SHA="$sha" \
+	RELAY_PP_AUTHOR="$HUMAN" RELAY_PP_SENDER="$HUMAN" RELAY_PP_BODY="$body_pass" \
+	RELAY_PP_PATHS_FILE="$ROOT/PROTECTED_PATHS" \
+	"$pp"
+expect_contains F26-msg 'FAIL'
+rm -rf "$_f26_fake"
 
 finish

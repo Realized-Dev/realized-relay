@@ -159,7 +159,11 @@ else
 	commits_tmp=$(mktemp)
 	files_tmp=$(mktemp)
 	trap 'rm -f "$commits_tmp" "$files_tmp"' EXIT
-	if ! gh api --paginate "repos/$repo/pulls/$pr_number/commits" --jq '.[] | [(.author.login // ""), (.committer.login // ""), (.commit.message // "")] | @tsv' >"$commits_tmp"; then
+	# Non-empty TSV sentinel for null/empty author or committer logins.
+	# bash IFS=$'\t' read collapses empty fields (leading and consecutive tabs),
+	# which can shift a human committer into the author slot. "-" is not a valid
+	# GitHub login and must never appear in @humans, so is_agent_login fails closed.
+	if ! gh api --paginate "repos/$repo/pulls/$pr_number/commits" --jq '.[] | [((.author.login // "") | if . == "" then "-" else . end), ((.committer.login // "") | if . == "" then "-" else . end), (.commit.message // "")] | @tsv' >"$commits_tmp"; then
 		echo "protected-paths: ERROR GitHub API commits failed"
 		exit 1
 	fi
