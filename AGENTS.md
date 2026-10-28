@@ -28,8 +28,8 @@ Use these entry points. Do not invent a second set.
 
 Repository checks:
 
-- Stream B owns the test runner, git hooks, and CI. When a test command exists, run it and treat that result as authoritative.
-- Until a test command exists, do not claim implementation work is done, and do not add a parallel test harness here.
+- Tests: `bash tests/run.sh`. Treat that result as authoritative.
+- This repository already ships hooks and CI. Enable hooks with `git config core.hooksPath .githooks` (see `.githooks/INSTALL`). Do not add a second test runner here.
 - Keep this file well under 32 KiB (Codex default `project_doc_max_bytes`).
 - Keep each pointer file under 40 lines.
 
@@ -49,17 +49,21 @@ If a test command does not exist yet, documentation-only work is done when the l
 
 Canonical skill files live at `.agents/skills/<name>/SKILL.md` (`init`, `sdd-to-tdd`, `commit`, `push`). Codex, Cursor, and Antigravity discover that path. Claude Code does not; `CLAUDE.md` tells it to open the same files when those names are invoked.
 
+Status: Cursor and Antigravity are fully tested; Claude Code and Codex are beta. `/init` writes the per-agent pointer files.
+
 ## Git and publish
 
 - Work on a feature branch. Open a draft pull request against `main`.
 - Never push to `main`, never force-push, never tag.
 - Do not mark a pull request ready and do not request reviewers. The ready step is a later gate.
-- Do not add `.githooks/` or CI workflow files. Stream B owns those.
+- Do not add `.githooks/` or CI workflow files. This repository already ships hooks and CI.
 - Do not bypass hooks with `--no-verify` when hooks exist. Hooks are bypassable; CI must re-check.
 
 ## Sensitive work
 
-If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, stop. The required-approver step (tied to the current head SHA) must pass. Stream B owns the fail-closed check. Missing labels, empty API output, or an approval on a different SHA means fail, not proceed.
+If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, stop. The required-approver step (tied to the current head SHA) must pass. This repository's hooks and CI own the fail-closed check. Missing labels, empty API output, or an approval on a different SHA means fail, not proceed.
+
+Gated pull requests need an APPROVED review on the current head SHA from a GitHub user who is not the pull request's author. GitHub rejects author self-approval (HTTP 422). Stay draft until that review lands.
 
 ## Do not
 
