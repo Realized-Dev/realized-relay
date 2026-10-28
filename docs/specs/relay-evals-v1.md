@@ -24,7 +24,7 @@ Kept changes get a three-run Haiku cross-check after 30 Oct. Monthly, and before
   - Protection of `evals/**` from agent edits (the protected-paths guard). Reads stay open until the runner-owner read guard is live as well; do not claim that agents cannot see evals until both protections are live.
   - Isolation conditions: tasks drawn only from Relay's own clean-build material; no client code, client names or codes, and no secrets.
 - Out of scope:
-  - Realized-Dev/realized-dev-harness (and any export or sync path from it).
+  - The private org harness repository (and any export or sync path from it).
   - Client repositories, client fixtures, or any material that carries client names, codes or secrets.
   - Scoring Claude Code or Codex as primary models in v1 (they may appear later as optional cross-checks).
   - Auto-merging harness changes on a green eval; humans keep the merge decision.
