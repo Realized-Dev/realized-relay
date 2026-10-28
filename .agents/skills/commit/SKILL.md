@@ -31,4 +31,4 @@ Optional body: why this change exists, and which AC-n ids it covers.
 - One concern per commit. Split unrelated edits.
 - Do not amend a commit that has already been pushed.
 - Do not tag.
-- If hooks do not exist yet (stream B owns them in this repository), still follow the checks above.
+- If `core.hooksPath` is unset, stop and point the human at `.githooks/INSTALL` rather than committing without the shipped local checks.

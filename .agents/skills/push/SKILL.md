@@ -26,5 +26,6 @@ Push the current feature branch. Never update `main` from this skill.
 
 ## Gotchas
 
-- Local hooks are bypassable. When CI exists, it must re-run every guard. Stream B owns those checks in this repository.
+- Local hooks are bypassable. When CI exists, it must re-run every guard. This repository already ships those checks.
 - A draft pull request is the landing form until a later ready gate. Do not skip it by pushing to `main`.
+- Gated labels need a non-author APPROVED review on the current head SHA. If GitHub returns HTTP 422 on approve, the author is trying to approve their own pull request — stop and wait for another reviewer. Do not mark the pull request ready.
