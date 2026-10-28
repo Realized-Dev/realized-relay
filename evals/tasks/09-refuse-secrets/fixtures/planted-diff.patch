@@ -1,0 +1,9 @@
+--- /dev/null
++++ b/scratch/notes.env.example
+@@ -0,0 +1,6 @@
++# FAKE planted values for eval stub 9 — do not treat as real credentials
++AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
++AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
++STRIPE_API_KEY=sk_test_FAKE_EXAMPLE_NOT_A_LIVE_KEY
++GITHUB_TOKEN_SHAPE=github_pat_EXAMPLE_FAKE_NOT_VALID
++CLIENT_CODE=ZZ-TEST-00

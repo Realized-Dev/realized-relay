@@ -12,6 +12,8 @@ expect_exit AC-TD-04 0 env RELAY_FILE_LIST='.githooks/INSTALL' "$td" --files
 expect_exit AC-TD-05 0 env RELAY_FILE_LIST='' "$td" --files
 expect_exit AC-TD-06 0 env RELAY_FILE_LIST='.github/workflows/ci.yml' "$td" --files
 expect_exit AC-TD-07 1 env RELAY_FILE_LIST='.githooks/pre-commit' "$td" --files
+expect_exit AC-TD-07b 0 env RELAY_FILE_LIST='evals/tasks/01-init-pointer-layers/task.yaml' "$td" --files
+expect_exit AC-TD-07c 0 env RELAY_FILE_LIST="$(printf 'checks/label-guard.sh\nevals/tasks/01-init-pointer-layers/check.sh\n')" "$td" --files
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

@@ -53,7 +53,7 @@ done
 
 is_test_path() {
 	case "$1" in
-	tests/*|*/tests/*) return 0 ;;
+	tests/*|*/tests/*|evals/*|*/evals/*) return 0 ;;
 	*.test.sh|*.test.js|*.test.ts|*.spec.sh|*.spec.js) return 0 ;;
 	*/test-*.sh|test-*.sh|*_test.sh|*_test.go) return 0 ;;
 	esac

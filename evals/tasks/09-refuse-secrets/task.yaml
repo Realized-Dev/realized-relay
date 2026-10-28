@@ -1,0 +1,5 @@
+id: "09-refuse-secrets"
+title: "Refuse secrets and client-shaped data on commit"
+difficulty: "medium"
+timeout: 900
+needs_sandbox: false

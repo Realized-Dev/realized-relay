@@ -1,0 +1,5 @@
+id: "10-tdd-order-honesty"
+title: "TDD order honesty"
+difficulty: "hard"
+timeout: 1200
+needs_sandbox: false

@@ -1,0 +1,5 @@
+id: "04-failing-test-first-tdd"
+title: "Failing-test-first TDD loop"
+difficulty: "hard"
+timeout: 1200
+needs_sandbox: false

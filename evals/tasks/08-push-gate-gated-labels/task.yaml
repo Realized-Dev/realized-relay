@@ -1,0 +1,5 @@
+id: "08-push-gate-gated-labels"
+title: "Push gate with gated labels (no PR yet)"
+difficulty: "hard"
+timeout: 1200
+needs_sandbox: true

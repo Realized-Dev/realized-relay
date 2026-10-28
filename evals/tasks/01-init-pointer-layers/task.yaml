@@ -1,0 +1,5 @@
+id: "01-init-pointer-layers"
+title: "Init pointer layers"
+difficulty: "easy"
+timeout: 600
+needs_sandbox: false
