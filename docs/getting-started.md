@@ -21,7 +21,7 @@ Optional: `RELAY_DENYLIST` in the environment for local secret scanning. If unse
        git config core.hooksPath .githooks
 
 3. Confirm sign-in: `gh` can see the target GitHub repo, and (for Antigravity) `GEMINI_API_KEY` is set in the shell that will run `agy`.
-4. Open the folder in your agent (Antigravity or Cursor) and run **`/init`**. Choose the agents you use, or accept the default of all four.
+4. Open the folder in your agent (Cursor, Antigravity, Claude Code (beta), or Codex (beta)) and run **`/init`**. Choose the agents you use, or accept the default of all four.
 5. Write or refine a spec (see `docs/spec-template.md`; feature specs go under `docs/specs/`), then run **`/sdd-to-tdd`**.
 6. On a feature branch (not `main`), run **`/commit`**, then **`/push`**. Expect a **draft** pull request against `main`.
 
@@ -33,7 +33,7 @@ The repository test command is `bash tests/run.sh`. Hooks and `/sdd-to-tdd` rely
 
 ## Gated labels and approval
 
-If the change is labelled (or is about) any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, stop for the required-approver step. That step needs an **APPROVED** review on the **current head SHA** from a GitHub user who is **not** the pull request's author. GitHub rejects an approval from the author (HTTP 422: "Review Can not approve your own pull request"). Stay on a draft pull request until that non-author approval lands on the current head. Agents must not mark the pull request ready and must not request reviewers.
+If the change is labelled (or is about) any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, and a pull request already exists, stop for the required-approver step. That step needs an **APPROVED** review on the **current head SHA** from a GitHub user who is **not** the pull request's author. GitHub rejects an approval from the author (HTTP 422: "Review Can not approve your own pull request"). Stay on a draft pull request until that non-author approval lands on the current head. If no pull request exists yet, allow the initial commit and draft pull request; enforce non-author approval for later gated actions and before merge. Agents must not mark the pull request ready and must not request reviewers.
 
 Label names are matched without regard to letter case (for example `Security` and `security`). Local hooks skip the label check when there is no pull request yet, or when `gh` is missing; approval is checked in CI. See `.githooks/INSTALL` and `docs/guard-workflow.md` (advanced).
 
