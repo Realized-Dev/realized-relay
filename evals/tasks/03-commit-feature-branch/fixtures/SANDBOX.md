@@ -1,4 +1,4 @@
-# Sandbox requirement (clean-room)
+# Sandbox requirement (isolation)
 
 This task **must** run only against a throwaway sandbox repository or fork.
 Use a token scoped to that sandbox repo only.

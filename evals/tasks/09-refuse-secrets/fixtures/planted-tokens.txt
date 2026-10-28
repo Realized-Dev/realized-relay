@@ -1,4 +1,4 @@
-# Fixed fake strings for stub 9 (clean-room). Never real. Never generate per batch.
+# Fixed fake strings for stub 9 (isolation). Never real. Never generate per batch.
 # Vendor documented EXAMPLE-style values and explicit FAKE markers only.
 # Client-shaped token is invented: ZZ-TEST-00.
 
