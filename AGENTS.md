@@ -61,7 +61,7 @@ Status: Cursor and Antigravity are fully tested; Claude Code and Codex are beta.
 
 ## Sensitive work
 
-If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, stop. The required-approver step (tied to the current head SHA) must pass. This repository's hooks and CI own the fail-closed check. Missing labels, empty API output, or an approval on a different SHA means fail, not proceed.
+If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, and a pull request already exists, stop. The required-approver step (tied to the current head SHA) must pass. This repository's hooks and CI own the fail-closed check. Missing labels, empty API output, or an approval on a different SHA means fail, not proceed. If no pull request exists yet, allow the initial commit and draft pull request; enforce non-author approval for later gated actions and before merge.
 
 Gated pull requests need an APPROVED review on the current head SHA from a GitHub user who is not the pull request's author. GitHub rejects author self-approval (HTTP 422). Stay draft until that review lands.
 
