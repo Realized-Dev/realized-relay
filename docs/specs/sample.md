@@ -12,3 +12,5 @@ This is a dry-run sample for a greeting helper.
 - [x] Write spec with AC-1 and AC-2
 - [x] Tests written (Red)
 - [x] Implementation written (Green)
+
+<!-- live bump 1 2026-10-28 13:59:48 CET -->
