@@ -142,7 +142,7 @@ Next: runner owner smoke-tests the pinned Flash path and logs batch-1 cost; spec
 
 ## Settled 28 Oct 2026 16:31 CET (amended 28 Oct 2026 for public-tree wording and log attribution)
 
-- Model: `gemini-3.8-flash-medium` via agy, pinned identically before and after. Temperature fixed per run. Seed must be applied through agy or the provider's generation config before any scored batch; do not score a comparison when the seed cannot be pinned (recording an unused seed is not enough). The two-batch baseline remains the noise measure once pins are real.
+- Model: `gemini-3.8-flash-medium` via agy, pinned identically before and after. Temperature fixed per run. Runs record seed_pinned; while the CLI can't pin a seed, unpinned runs are scored and the paired baseline batches measure run-to-run noise. Pinning via generationConfig is a later change.
 - Grader log: `/workspace/qa/evals-log/` for dry runs; one line per run (task id, seed, run index, pass/fail, note of up to 120 characters). Before and after batches must write to separate, uniquely identified log files, or each line must include a batch/side identifier, so paired cells stay attributable when task id, seed and run index repeat. Its home in the repo stays open for v1.
 - Task schema: `evals/tasks/<NN-slug>/` with `task.yaml` (id, title, difficulty, timeout, needs_sandbox), `prompt.md` (the only text the agent sees), `fixtures/` (fixed fake values only) and `check.sh` (deterministic: exit 0 means pass; no LLM judge; hidden from fix agents by the guard).
 - First baseline: 7 runnable tasks (stubs 3, 7 and 8 wait for the sandbox repo) × 5 runs × 2 batches = 70 runs.
