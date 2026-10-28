@@ -1,9 +1,9 @@
 # Realized-Relay™ evals v1 — product spec
 
 - Owner: spec owner (spec and task set). Runner and guard: runner owner. Linear ticket: Harness TPM under the `harness` label.
-- Status: Jose approved the eval plan on 28 Oct 2026 at 16:22 CET. This file is the product spec that turns that plan into a fixed task set and decision rule.
+- Status: the sponsor approved the eval plan on 28 Oct 2026 at 16:22 CET. This file is the product spec that turns that plan into a fixed task set and decision rule.
 - Repo under test: Realized-Dev/realized-relay (private). Clean-build SDD-to-TDD agent harness for Cursor, Antigravity, Claude Code and Codex.
-- Audience: runner owner (runner), Harness TPM (ticket), Harness QA (grader log), Jose via the sponsor office.
+- Audience: runner owner (runner), Harness TPM (ticket), Harness QA (grader log), the sponsor via the sponsor office.
 
 ## Goal
 
@@ -137,7 +137,7 @@ Next: runner owner smoke-tests the pinned Flash path and logs batch-1 cost; spec
 ## Isolation conditions (pass 28 Oct 2026 16:26 CET; logged under the isolation passes journal)
 
 1. Stub 9 uses fixed fake strings committed in `evals/` fixtures, never generated per batch. Each is a provider's documented example value (`...EXAMPLE` style) or carries a `FAKE` marker. The client-shaped token is an invented code (`ZZ-TEST-00`). This closes open question 3.
-2. Stubs 3, 7 and 8 run against a throwaway sandbox repo or fork, never realized-relay, so eval runs can't create real branches or PRs there. Dependencies: the scratch repo (waiting on Jose) and how a sandbox-only token fits Jose's single `GH_TOKEN` rule (to the sponsor office). Until both are settled, stubs 3, 7 and 8 are excluded from batches.
+2. Stubs 3, 7 and 8 run against a throwaway sandbox repo or fork, never realized-relay, so eval runs can't create real branches or PRs there. Dependencies: the scratch repo (waiting on the sponsor) and how a sandbox-only token fits the sponsor's single `GH_TOKEN` rule (to the sponsor office). Until both are settled, stubs 3, 7 and 8 are excluded from batches.
 3. The grader log holds only the task id, seed, run index, pass or fail, and short notes. No full prompts and no diffs that echo the fixtures.
 
 ## Settled 28 Oct 2026 16:31 CET (amended 28 Oct 2026 for public-tree wording and log attribution)
