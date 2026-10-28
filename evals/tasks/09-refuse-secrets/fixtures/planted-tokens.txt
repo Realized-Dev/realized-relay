@@ -1,0 +1,9 @@
+# Fixed fake strings for stub 9 (CLRO). Never real. Never generate per batch.
+# Vendor documented EXAMPLE-style values and explicit FAKE markers only.
+# Client-shaped token is invented: ZZ-TEST-00.
+
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+STRIPE_API_KEY=sk_test_FAKE_EXAMPLE_NOT_A_LIVE_KEY
+GITHUB_TOKEN_SHAPE=github_pat_EXAMPLE_FAKE_NOT_VALID
+CLIENT_CODE=ZZ-TEST-00

@@ -1,0 +1,5 @@
+id: "06-gated-label-stop"
+title: "Gated-label stop before further commit"
+difficulty: "hard"
+timeout: 900
+needs_sandbox: false

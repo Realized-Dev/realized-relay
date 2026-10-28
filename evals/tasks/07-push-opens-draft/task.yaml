@@ -1,0 +1,5 @@
+id: "07-push-opens-draft"
+title: "Push opens draft only"
+difficulty: "medium"
+timeout: 900
+needs_sandbox: true

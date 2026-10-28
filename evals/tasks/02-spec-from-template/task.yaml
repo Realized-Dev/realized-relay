@@ -1,0 +1,5 @@
+id: "02-spec-from-template"
+title: "Spec from template with numbered ACs"
+difficulty: "easy"
+timeout: 600
+needs_sandbox: false
