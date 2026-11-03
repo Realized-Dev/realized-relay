@@ -34,6 +34,8 @@ If the change is labelled (or is about) any of `sensitive`, `migration`, `approv
 
 ## Notice
 
-Copyright (c) 2026 Realized Development Corporation. All rights reserved. Proprietary; no licence granted.
+Copyright (c) 2026 Realized Development Corporation.
+
+Licence: Apache-2.0 (see [LICENSE](LICENSE)).
 
 Realized-Relay™ is a trademark of Realized Development Corporation.

@@ -4,9 +4,7 @@
 
 Do not open a public issue or pull request about a security problem.
 
-Report it privately to the maintainers of this repository.
-
-TODO: name the reporting channel (for example GitHub private vulnerability reporting, or a monitored security address) and confirm it is enabled before publication. No contact address is stated in the repository yet.
+Report it privately through GitHub private vulnerability reporting: open the repository's Security tab and choose **Report a vulnerability**. This channel is enabled when the repository goes public.
 
 Include the affected file or workflow, the steps to reproduce, and the commit SHA. Do not include secrets, tokens, or client data in a report.
 

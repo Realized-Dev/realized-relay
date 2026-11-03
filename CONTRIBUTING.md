@@ -1,6 +1,6 @@
 # Contributing
 
-The licence for Realized-Relay is pending the owner's decision (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). Ask the repository owner before you contribute. Do not submit code or text you are not entitled to contribute.
+Realized-Relay is licensed under Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). Do not submit code or text you are not entitled to contribute.
 
 ## Before you start
 
