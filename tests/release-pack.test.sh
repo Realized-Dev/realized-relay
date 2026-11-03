@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release pack checks (REAZED-453): legal files, contributor and security docs,
+# Release pack checks: legal files, contributor and security docs,
 # public provenance, and agent support labels.
 set -euo pipefail
 # shellcheck disable=SC1091
