@@ -22,7 +22,17 @@ done
 expect_contains AC-RP-2a "$holder" "$(file_text LICENSE)"
 expect_contains AC-RP-2b "$holder" "$(file_text NOTICE)"
 
-expect_contains AC-RP-3 "no licence granted" "$(file_text LICENSE)"
+expect_contains AC-RP-3a "pending the owner's decision" "$(file_text LICENSE)"
+expect_omits AC-RP-3b "Apache" "$(file_text LICENSE)"
+expect_omits AC-RP-3c "Permission is hereby granted" "$(file_text LICENSE)"
+
+expect_contains AC-RP-7 "Proprietary; no licence granted." "$(file_text README.md)"
+
+if grep -qiE "licensed under|Apache|Permission is hereby granted" "$ROOT/NOTICE" 2>/dev/null; then
+	bad "AC-RP-8 NOTICE claims no licence" "licence wording found in NOTICE"
+else
+	ok "AC-RP-8 NOTICE claims no licence"
+fi
 
 expect_contains AC-RP-4a "AGENTS.md" "$(file_text CONTRIBUTING.md)"
 expect_contains AC-RP-4b "draft" "$(file_text CONTRIBUTING.md)"
