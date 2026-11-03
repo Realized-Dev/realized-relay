@@ -28,6 +28,10 @@ expect_contains AC-RP-4a "AGENTS.md" "$(file_text CONTRIBUTING.md)"
 expect_contains AC-RP-4b "draft" "$(file_text CONTRIBUTING.md)"
 expect_contains AC-RP-4c "/push" "$(file_text CONTRIBUTING.md)"
 
+expect_contains AC-RP-5a "Written fresh for this repository; earlier internal tooling was consulted as a design reference only." "$(file_text PROVENANCE.md)"
+expect_contains AC-RP-5b "clean build" "$(file_text PROVENANCE.md)"
+expect_contains AC-RP-5c "reference baseline only" "$(file_text PROVENANCE.md)"
+
 expect_contains AC-RP-6a "| Claude Code | Beta |" "$(file_text README.md)"
 expect_contains AC-RP-6b "| Codex | Beta |" "$(file_text README.md)"
 expect_contains AC-RP-6c "| Cursor | Fully tested |" "$(file_text README.md)"
