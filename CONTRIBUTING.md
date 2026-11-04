@@ -2,6 +2,8 @@
 
 Realized-Relay™ is licensed under Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). Do not submit code or text you are not entitled to contribute.
 
+By contributing, you agree that your contributions are licensed under the Apache License, Version 2.0 (see §5 of LICENSE).
+
 ## Before you start
 
 - Read [AGENTS.md](AGENTS.md). It is the canonical method for people and agents: spec, numbered acceptance criteria, tests, then implementation.

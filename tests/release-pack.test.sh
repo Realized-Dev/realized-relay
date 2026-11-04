@@ -92,14 +92,18 @@ expect_contains AC-RP-11a "Realized-Relay™ is licensed under Apache-2.0" "$(fi
 expect_contains AC-RP-11b "Realized-Relay™ is a set of instructions" "$(file_text SECURITY.md)"
 
 expect_contains AC-RP-12a "## Planned after v1" "$(file_text README.md)"
-expect_contains AC-RP-12b "Optional content-tier check before tool egress" "$(file_text README.md)"
-expect_contains AC-RP-12c "Deterministic prompt-injection denylist on \`/init\` and skill entry" "$(file_text README.md)"
+expect_contains AC-RP-12b "An optional content-tier check before tool egress will be explored as a mitigation" "$(file_text README.md)"
+expect_contains AC-RP-12c "A deterministic prompt-injection denylist on \`/init\` and skill entry will be explored as a mitigation" "$(file_text README.md)"
 expect_omits AC-RP-12d "REAZED" "$(file_text README.md)"
 
 expect_contains AC-RP-13a "[Contributing](CONTRIBUTING.md)" "$(file_text README.md)"
 expect_contains AC-RP-13b "[Security](SECURITY.md)" "$(file_text README.md)"
 
 expect_contains AC-RP-14 "/sdd-to-tdd" "$(file_text README.md)"
+
+expect_contains AC-RP-16 "Realized-Relay™ is a spec-and-test layer that runs on top of agent harnesses such as Cursor and Antigravity." "$(file_text README.md)"
+expect_omits AC-RP-17 "(private; you need access)" "$(file_text README.md)"
+expect_contains AC-RP-18 "By contributing, you agree that your contributions are licensed under the Apache License, Version 2.0 (see §5 of LICENSE)." "$(file_text CONTRIBUTING.md)"
 
 expect_contains AC-RP-15a "| Cursor | fully tested |" "$(file_text .agents/skills/init/SKILL.md)"
 expect_contains AC-RP-15b "| Antigravity | fully tested |" "$(file_text .agents/skills/init/SKILL.md)"
