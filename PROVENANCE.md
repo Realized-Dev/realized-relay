@@ -2,6 +2,10 @@ Written fresh for this repository; earlier internal tooling was consulted as a d
 
 ## Clean build
 
-Realized-Relay is a clean build. An earlier internal agent harness served as a reference baseline only. Nothing was exported from it. Files in this repository were written from the specification and public documentation.
+Realized-Relay is a clean build. Relay v1 is planned from fresh research. It is not exported from realized-dev-harness, the earlier internal agent harness, which served only as a reference baseline. No code, prompts, or other files were copied from it. Files in this repository were written from the specification and public documentation.
 
-Status: this file covers changes on `main` through 28 October 2026. That includes the cold-start README, the protected-paths guard, the relay evals v1 spec and task stubs, and hook and guard hardening.
+## Ownership and licence
+
+Copyright in Realized-Relay is held by Realized Development Corporation, including contributions assigned to it by the founder. Realized-Relay is licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
+
+Status: this file covers changes on `main` through 28 October 2026, plus the v1 release pack (REAZED-453). That includes the cold-start README, the protected-paths guard, the relay evals v1 spec and task stubs, hook and guard hardening, and the release-pack documents.

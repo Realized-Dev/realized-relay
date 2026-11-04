@@ -1,12 +1,16 @@
 Realized-Relay
-Copyright (c) 2026 Realized Development Corporation. All rights reserved.
+Copyright 2026 Realized Development Corporation
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full licence text.
 
 Realized-Relay™ is a trademark of Realized Development Corporation.
-
-Licence
-The licence is pending the owner's decision. See LICENSE. This notice grants no licence.
+The Apache License does not grant permission to use this trademark
+(see Section 6 of the License).
 
 Third-party products
-Cursor, Antigravity, Claude Code, Codex, GitHub, and other product names in this repository are trademarks of their respective owners. Realized Development Corporation is not affiliated with, endorsed by, or certified by those owners. Realized-Relay ships no vendor tools or keys. Users bring their own accounts and follow each vendor's terms.
-
-TODO: confirm this wording against the 25 October legal memo before publication. The memo was not available when this file was drafted.
+Cursor, Antigravity, Claude Code, Codex, GitHub, and other product names
+in this repository are trademarks of their respective owners. Realized
+Development Corporation is not affiliated with, endorsed by, or certified
+by those owners. Realized-Relay ships no vendor tools or keys. Users bring
+their own accounts and follow each vendor's terms.
