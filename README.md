@@ -1,5 +1,7 @@
 # Realized-Relay™
 
+Realized-Relay™ is a spec-and-test layer that runs on top of agent harnesses such as Cursor and Antigravity.
+
 A small starter for new projects with AI coding agents: write the spec first, turn it into tests, then commit and push in small steps. Agents open draft pull requests. A person approves every merge.
 
 Realized-Relay™ ships no vendor tools or keys; you use your own accounts under each vendor's terms.
@@ -15,11 +17,12 @@ Realized-Relay™ ships no vendor tools or keys; you use your own accounts under
 
 ## Quick start
 
-1. [Clone](docs/getting-started.md#first-run) `https://github.com/Realized-Dev/realized-relay.git` (private; you need access) and open a terminal in the clone root.
+1. [Clone](docs/getting-started.md#first-run) `https://github.com/Realized-Dev/realized-relay.git` and open a terminal in the clone root.
 2. [Enable hooks](docs/getting-started.md#first-run): `git config core.hooksPath .githooks`.
 3. [Sign in](docs/getting-started.md#prerequisites): `gh auth login` (minimum scopes `repo`, `read:org`, `gist`).
 4. Open the folder in your agent and run [`/init`](docs/getting-started.md#first-run).
-5. Confirm green with [`bash tests/run.sh`](docs/getting-started.md#tests).
+5. Write a spec in `docs/specs/` and run `/sdd-to-tdd`.
+6. Confirm green with [`bash tests/run.sh`](docs/getting-started.md#tests).
 
 ## Approval
 
@@ -30,10 +33,19 @@ If the change is labelled (or is about) any of `sensitive`, `migration`, `approv
 - [Getting started](docs/getting-started.md) — prerequisites, first-run path, expected signals
 - [Troubleshooting](docs/troubleshooting.md)
 - [Spec template](docs/spec-template.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
 - [Guard workflow](docs/guard-workflow.md) (advanced)
+
+## Planned after v1
+
+- An optional content-tier check before tool egress will be explored as a mitigation (redact or refuse by sensitivity).
+- A deterministic prompt-injection denylist on `/init` and skill entry will be explored as a mitigation.
 
 ## Notice
 
-Copyright (c) 2026 Realized Development Corporation. All rights reserved. Proprietary; no licence granted.
+Copyright (c) 2026 Realized Development Corporation.
+
+Licence: Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 
 Realized-Relay™ is a trademark of Realized Development Corporation.
