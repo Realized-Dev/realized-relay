@@ -19,7 +19,8 @@ Realized-Relay™ ships no vendor tools or keys; you use your own accounts under
 2. [Enable hooks](docs/getting-started.md#first-run): `git config core.hooksPath .githooks`.
 3. [Sign in](docs/getting-started.md#prerequisites): `gh auth login` (minimum scopes `repo`, `read:org`, `gist`).
 4. Open the folder in your agent and run [`/init`](docs/getting-started.md#first-run).
-5. Confirm green with [`bash tests/run.sh`](docs/getting-started.md#tests).
+5. Write a spec in `docs/specs/` and run `/sdd-to-tdd`.
+6. Confirm green with [`bash tests/run.sh`](docs/getting-started.md#tests).
 
 ## Approval
 
@@ -30,12 +31,19 @@ If the change is labelled (or is about) any of `sensitive`, `migration`, `approv
 - [Getting started](docs/getting-started.md) — prerequisites, first-run path, expected signals
 - [Troubleshooting](docs/troubleshooting.md)
 - [Spec template](docs/spec-template.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
 - [Guard workflow](docs/guard-workflow.md) (advanced)
+
+## Planned after v1
+
+- Optional content-tier check before tool egress (block or redact by sensitivity).
+- Deterministic prompt-injection denylist on `/init` and skill entry.
 
 ## Notice
 
 Copyright (c) 2026 Realized Development Corporation.
 
-Licence: Apache-2.0 (see [LICENSE](LICENSE)).
+Licence: Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
 
 Realized-Relay™ is a trademark of Realized Development Corporation.

@@ -10,7 +10,7 @@ Include the affected file or workflow, the steps to reproduce, and the commit SH
 
 ## Scope
 
-Realized-Relay is a set of instructions, skills, git hooks, and CI checks for AI coding agents. The guards reduce mistakes. They are not a sandbox and do not replace human review. Vendor tools, accounts, and API keys are outside this project; report problems with those to the vendor.
+Realized-Relay™ is a set of instructions, skills, git hooks, and CI checks for AI coding agents. The guards reduce mistakes. They are not a sandbox and do not replace human review. Vendor tools, accounts, and API keys are outside this project; report problems with those to the vendor.
 
 ## Supported versions
 
