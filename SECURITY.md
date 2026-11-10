@@ -4,7 +4,7 @@
 
 Do not open a public issue or pull request about a security problem.
 
-Report it privately through GitHub private vulnerability reporting: open the repository's Security tab and choose **Report a vulnerability**. This channel is enabled when the repository goes public.
+Private vulnerability reporting is enabled for this repository. Please report vulnerabilities privately through the Security tab ("Report a vulnerability"), not in public issues.
 
 Include the affected file or workflow, the steps to reproduce, and the commit SHA. Do not include secrets, tokens, or client data in a report.
 
