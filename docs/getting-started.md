@@ -23,7 +23,7 @@ Optional: `RELAY_DENYLIST` in the environment for local secret scanning. If unse
 3. Confirm sign-in: `gh` can see the target GitHub repo, and (for Antigravity) `GEMINI_API_KEY` is set in the shell that will run `agy`.
 4. Open the folder in your agent (Cursor, Antigravity, Claude Code (beta), or Codex (beta)) and run **`/init`**. Choose the agents you use, or accept the default of all four.
 5. Write or refine a spec (see `docs/spec-template.md`; feature specs go under `docs/specs/`), then run **`/sdd-to-tdd`**.
-6. On a feature branch (not `main`), run **`/commit`**, then **`/push`**. Expect a **draft** pull request against `main`.
+6. On a feature branch (not `main`), run **`/commit`**, then **`/push`**. Expect a **draft** pull request against `staging` (or your default branch if you have none).
 
 Do not skip step 2. Hooks must be on before `/commit`, or the local checks that accompany a commit will not run.
 
@@ -45,7 +45,7 @@ Label names are matched without regard to letter case (for example `Security` an
 | `/sdd-to-tdd` | Spec with `AC-n` ids; tests that fail for the missing behaviour; then a green `bash tests/run.sh`. |
 | Tests | Lines like `==> tests/….test.sh` and `PASS tests/….test.sh`. |
 | `/commit` | A Conventional Commits subject (`feat:`, `fix:`, `docs:`, …) and `local-checks: ok (…)` when hooks are enabled. |
-| `/push` | Feature branch pushed; a **draft** pull request against `main` (stays draft). |
+| `/push` | Feature branch pushed; a **draft** pull request against `staging` (or your default branch if you have none) (stays draft). |
 
 ## What this is not
 
