@@ -14,7 +14,7 @@ Push the current feature branch. Never update `main` from this skill.
 3. Abort if the working tree has uncommitted changes that belong to this work. Use `/commit` first.
 4. If the change is labelled, or is about, any of `sensitive`, `migration`, `approval-required`, `privacy`, `legal`, or `security`, and a pull request already exists for this branch, stop unless the required-approver check has passed for this exact head SHA. Missing labels, empty API output, or an approval on another SHA is a fail. If no pull request exists yet, continue: push and open the draft (step 6); enforce non-author approval for later gated actions and before merge.
 5. Push only this branch: `git push -u origin HEAD`. On network failure, retry up to four times with 4s, 8s, 16s, 32s delays. Do not retry a rejection that is not a network error.
-6. If no pull request exists for this branch, open a **draft** pull request against `staging`.
+6. If no pull request exists for this branch, open a **draft** pull request against `staging` (or your default branch if you have none).
 7. Do not mark the pull request ready. Do not request reviewers. Do not merge.
 
 ## Hard stops
