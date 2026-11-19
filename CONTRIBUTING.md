@@ -13,7 +13,7 @@ By contributing, you agree that your contributions are licensed under the Apache
 ## Workflow
 
 - Work on a feature branch. Never push to `main`, never force-push, and never tag.
-- Publish a branch with `/push` (see [.agents/skills/push/SKILL.md](.agents/skills/push/SKILL.md)). Open a **draft** pull request against `main`.
+- Publish a branch with `/push` (see [.agents/skills/push/SKILL.md](.agents/skills/push/SKILL.md)). Open a **draft** pull request against `staging`.
 - Agents do not mark a pull request ready or request reviewers. A maintainer makes that step.
 - Use Conventional Commits and keep one logical change per commit (see [.agents/skills/commit/SKILL.md](.agents/skills/commit/SKILL.md)).
 
